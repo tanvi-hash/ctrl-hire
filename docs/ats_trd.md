@@ -31,6 +31,7 @@ No queues, no workers, no microservices, no cache layer, no event bus. Scoring i
 | Layer          | Pick                                                     | Why                                                                                      |
 | -------------- | -------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
 | Web            | Next.js (App Router) + Tailwind                          | One codebase for frontend + API routes; deploys to Vercel with zero config               |
+| UI components  | shadcn/ui (copied into repo)                             | Accessible primitives (Sheet, Dialog, RadioGroup, Select, etc.) for side panel, rubric form, scorecard — saves reinventing in 1.5 days |
 | DB + Storage   | Supabase (Postgres + Storage)                            | Both in one managed service with a generous free tier; Supabase JS client handles both   |
 | Hosting        | Local dev → Vercel                                       | Ship to the default `*.vercel.app` URL; custom domain deferred                           |
 | LLM            | Gemini 2.5 Flash via Google AI Studio                    | Free tier covers hackathon use; structured output via `responseSchema`; native PDF input |
