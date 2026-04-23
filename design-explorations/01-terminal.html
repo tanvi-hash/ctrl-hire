@@ -1,0 +1,301 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=1280" />
+<title>ctrl-hire · 01 Terminal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg:#0a0a0a; --panel:#0f0f0f; --panel2:#141414;
+    --line:#1e1e1e; --line2:#262626;
+    --text:#e7e7e7; --muted:#7a7a7a; --dim:#4a4a4a;
+    --lime:#c8ff00; --amber:#ffb020; --rose:#ff4d6d; --cyan:#6ee7ff;
+    --ok:#7ae88f; --bad:#ff6870;
+    --mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
+    --sans:"Inter",system-ui,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--text);font-family:var(--mono);font-size:13px;line-height:1.45}
+  ::selection{background:var(--lime);color:#000}
+  a{color:var(--cyan);text-decoration:none}
+  .app{display:grid;grid-template-rows:48px 56px 1fr 28px;height:100vh}
+
+  /* Top bar */
+  .topbar{display:flex;align-items:center;border-bottom:1px solid var(--line);background:var(--panel);padding:0 16px;gap:24px}
+  .brand{font-weight:700;color:var(--lime);letter-spacing:.04em}
+  .brand span{color:var(--muted);font-weight:400;margin-left:6px}
+  .crumbs{color:var(--muted);font-size:12px}
+  .crumbs b{color:var(--text);font-weight:500}
+  .spacer{flex:1}
+  .tb-right{display:flex;gap:12px;align-items:center;color:var(--muted);font-size:12px}
+  .tb-right .kbd{border:1px solid var(--line2);padding:1px 6px;border-radius:3px;color:var(--text)}
+
+  /* Role header */
+  .rolebar{border-bottom:1px solid var(--line);padding:10px 16px;display:grid;grid-template-columns:1.4fr 1fr auto;gap:24px;align-items:center;background:var(--panel)}
+  .role-title{display:flex;align-items:baseline;gap:12px}
+  .role-title h1{font-size:16px;margin:0;font-weight:600;letter-spacing:-.01em}
+  .role-title .status{font-size:11px;color:var(--lime);border:1px solid var(--lime);padding:1px 6px;border-radius:2px;letter-spacing:.06em}
+  .role-meta{font-size:12px;color:var(--muted);display:flex;gap:14px}
+  .role-meta b{color:var(--text);font-weight:500}
+  .role-stats{display:flex;gap:18px;font-size:12px}
+  .stat{display:flex;flex-direction:column;align-items:flex-end}
+  .stat .n{font-size:15px;font-weight:600;color:var(--text)}
+  .stat .l{font-size:10px;color:var(--muted);letter-spacing:.08em;text-transform:uppercase}
+  .role-actions{display:flex;gap:8px}
+  .btn{background:transparent;color:var(--text);border:1px solid var(--line2);padding:6px 12px;font-family:var(--mono);font-size:12px;cursor:pointer;border-radius:2px;letter-spacing:.04em}
+  .btn:hover{border-color:var(--text)}
+  .btn.primary{background:var(--lime);color:#000;border-color:var(--lime);font-weight:600}
+  .btn.primary:hover{background:#e2ff5a}
+
+  /* Body split */
+  .body{display:grid;grid-template-columns:minmax(0,1fr) 520px;min-height:0}
+  .list-wrap{border-right:1px solid var(--line);overflow:auto;min-height:0}
+  .list-toolbar{display:flex;align-items:center;gap:12px;padding:8px 16px;border-bottom:1px solid var(--line);font-size:12px;color:var(--muted);position:sticky;top:0;background:var(--panel);z-index:2}
+  .list-toolbar .pill{border:1px solid var(--line2);padding:2px 8px;border-radius:12px;cursor:pointer}
+  .list-toolbar .pill.active{background:var(--text);color:#000;border-color:var(--text)}
+  .search{flex:1;display:flex;align-items:center;gap:8px}
+  .search input{background:transparent;border:0;color:var(--text);font-family:var(--mono);font-size:12px;outline:none;width:100%}
+  .hr-dim{color:var(--dim)}
+
+  /* Column header */
+  .colhead{display:grid;grid-template-columns:40px 52px minmax(180px,1.4fr) minmax(160px,2fr) 120px 110px 70px;gap:0;padding:6px 16px;color:var(--dim);font-size:10px;letter-spacing:.12em;text-transform:uppercase;border-bottom:1px solid var(--line)}
+  .row{display:grid;grid-template-columns:40px 52px minmax(180px,1.4fr) minmax(160px,2fr) 120px 110px 70px;align-items:center;gap:0;padding:10px 16px;border-bottom:1px solid var(--line);cursor:pointer;transition:background .08s}
+  .row:hover{background:#101010}
+  .row.active{background:var(--panel2);box-shadow:inset 2px 0 0 var(--lime)}
+  .row .idx{color:var(--dim);font-size:11px}
+  .row .score{font-weight:700;font-size:15px;font-variant-numeric:tabular-nums}
+  .score.s-hi{color:var(--lime)}
+  .score.s-mid{color:var(--amber)}
+  .score.s-lo{color:var(--rose)}
+  .row .name{display:flex;flex-direction:column;gap:2px}
+  .row .name b{font-weight:500;font-size:13px}
+  .row .name .sub{color:var(--muted);font-size:11px;font-weight:400}
+  .row .sum{color:var(--muted);font-size:12px;padding-right:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .row .src{font-size:11px;color:var(--text)}
+  .row .src .tag{color:var(--muted)}
+  .row .mh{font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums}
+  .row .mh b{color:var(--text)}
+  .row .age{color:var(--muted);font-size:11px;text-align:right}
+
+  /* Sparkbar */
+  .spark{display:inline-flex;gap:1px;vertical-align:middle;margin-left:6px}
+  .spark i{display:inline-block;width:2px;height:10px;background:var(--dim)}
+  .spark i.on{background:currentColor}
+
+  /* Side panel */
+  .side{background:var(--panel);overflow:auto;display:flex;flex-direction:column}
+  .side-head{padding:14px 16px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--panel);z-index:2}
+  .side-head .row1{display:flex;align-items:center;gap:12px}
+  .side-head h2{font-size:15px;margin:0;font-weight:600;letter-spacing:-.01em}
+  .side-head .score-big{font-size:34px;font-weight:700;letter-spacing:-.02em;font-variant-numeric:tabular-nums;line-height:1}
+  .side-head .score-big small{font-size:12px;color:var(--muted);font-weight:400;margin-left:4px}
+  .side-head .sub{color:var(--muted);font-size:12px;margin-top:4px}
+  .side-head .acts{display:flex;gap:6px;margin-top:12px}
+  .side-head .acts .btn{flex:1;text-align:center}
+  .side-head .btn.shortlist{background:var(--lime);color:#000;border-color:var(--lime);font-weight:600}
+  .side-head .btn.shortlist:hover{background:#e2ff5a}
+  .side-head .btn.reject{border-color:var(--rose);color:var(--rose)}
+  .side-head .btn.reject:hover{background:var(--rose);color:#000}
+  .side-head .btn.save:hover{border-color:var(--amber);color:var(--amber)}
+
+  .side-body{padding:0 16px 24px}
+  .sec{padding:14px 0;border-bottom:1px solid var(--line)}
+  .sec-h{color:var(--dim);font-size:10px;letter-spacing:.12em;text-transform:uppercase;margin-bottom:8px}
+  .mh-list{display:flex;flex-direction:column;gap:4px}
+  .mh-item{display:grid;grid-template-columns:16px 1fr;gap:8px;align-items:center;font-size:12px}
+  .mh-item .mark{color:var(--ok);font-weight:700}
+  .mh-item.no .mark{color:var(--bad)}
+  .mh-item.no{color:var(--muted)}
+  .evi{border-left:1px solid var(--line2);padding:6px 10px;margin:6px 0;color:var(--muted);font-size:12px}
+  .evi b{color:var(--text);font-weight:500;display:block;font-size:12px;margin-bottom:2px}
+  .evi.bad{border-left-color:var(--rose)}
+  .evi.good{border-left-color:var(--ok)}
+  .qa{font-size:12px;color:var(--muted);margin-bottom:6px}
+  .qa b{display:block;color:var(--text);font-weight:500;margin-bottom:2px}
+  .resume-thumb{border:1px dashed var(--line2);padding:12px;color:var(--dim);font-size:11px;text-align:center;border-radius:2px;margin-top:8px}
+
+  /* Bottom bar */
+  .bottom{background:#000;border-top:1px solid var(--line2);display:flex;align-items:center;padding:0 16px;gap:18px;font-size:11px;color:var(--muted)}
+  .bottom .kbd{border:1px solid var(--line2);padding:0 5px;border-radius:2px;color:var(--text)}
+  .bottom .lime{color:var(--lime)}
+
+  /* Source tags */
+  .srctag{display:inline-block;font-size:10px;padding:1px 6px;border-radius:2px;letter-spacing:.04em;font-weight:500}
+  .src-linkedin{background:rgba(110,231,255,.12);color:var(--cyan)}
+  .src-referral{background:rgba(200,255,0,.12);color:var(--lime)}
+  .src-naukri{background:rgba(255,176,32,.12);color:var(--amber)}
+  .src-career{background:rgba(255,77,109,.12);color:var(--rose)}
+</style>
+</head>
+<body>
+<div class="app">
+  <!-- Top bar -->
+  <header class="topbar">
+    <div class="brand">CTRL-HIRE<span>v0.1.0-hk</span></div>
+    <div class="crumbs">/ reqs / <b>frontend-sr-02</b></div>
+    <div class="spacer"></div>
+    <div class="tb-right">
+      <span>HR · Alex R.</span>
+      <span class="hr-dim">│</span>
+      <span><span class="kbd">⌘</span> <span class="kbd">K</span> command</span>
+    </div>
+  </header>
+
+  <!-- Role header -->
+  <section class="rolebar">
+    <div>
+      <div class="role-title">
+        <h1>Senior Frontend Engineer</h1>
+        <span class="status">OPEN</span>
+      </div>
+      <div class="role-meta">
+        <span><b>Payments</b> team</span>
+        <span>Bangalore / Remote</span>
+        <span>₹42–58L</span>
+        <span>HM: <b>Meera Subramaniam</b></span>
+        <span>Posted 3d ago</span>
+      </div>
+    </div>
+    <div class="role-stats">
+      <div class="stat"><div class="n">47</div><div class="l">applied</div></div>
+      <div class="stat"><div class="n">42</div><div class="l">scored</div></div>
+      <div class="stat"><div class="n" style="color:var(--lime)">10</div><div class="l">to review</div></div>
+      <div class="stat"><div class="n">0</div><div class="l">shortlist</div></div>
+      <div class="stat"><div class="n" style="color:var(--muted)">15</div><div class="l">rejected</div></div>
+    </div>
+    <div class="role-actions">
+      <button class="btn">Copy URLs</button>
+      <button class="btn primary">Send to HM ▸</button>
+    </div>
+  </section>
+
+  <!-- Body -->
+  <div class="body">
+    <div class="list-wrap">
+      <div class="list-toolbar">
+        <div class="pill active">All · 10</div>
+        <div class="pill">≥80 · 4</div>
+        <div class="pill">Referral · 2</div>
+        <div class="pill">Must-haves ✓ · 4</div>
+        <span class="hr-dim">│</span>
+        <div class="search">
+          <span class="hr-dim">/</span>
+          <input placeholder="filter candidates…" />
+        </div>
+        <span class="hr-dim">Sort:</span>
+        <span style="color:var(--text)">score desc ▾</span>
+      </div>
+      <div class="colhead">
+        <div>#</div><div>SCORE</div><div>NAME · CURRENT</div><div>SUMMARY</div><div>SOURCE</div><div>MUST-HAVES</div><div>AGE</div>
+      </div>
+      <div id="rows"></div>
+    </div>
+
+    <aside class="side" id="side"></aside>
+  </div>
+
+  <!-- Bottom -->
+  <footer class="bottom">
+    <span><span class="kbd">↑ ↓</span> navigate</span>
+    <span><span class="kbd">S</span> shortlist</span>
+    <span><span class="kbd">R</span> reject</span>
+    <span><span class="kbd">L</span> save for later</span>
+    <span><span class="kbd">O</span> open resume</span>
+    <div class="spacer" style="flex:1"></div>
+    <span class="lime">● connected</span>
+    <span>scorer: claude-haiku · v1.3</span>
+  </footer>
+</div>
+
+<script src="./_data.js"></script>
+<script>
+  const srcClass = (s) => ({LinkedIn:"src-linkedin",Referral:"src-referral",Naukri:"src-naukri","Career page":"src-career"}[s]||"");
+  const mhCount = (c) => c.mustHaves.filter(m=>m.pass).length;
+  const spark = (score) => {
+    const filled = Math.round(score/10);
+    let s='<span class="spark">';
+    for(let i=0;i<10;i++) s+=`<i class="${i<filled?'on':''}"></i>`;
+    return s+'</span>';
+  };
+  const scoreClass = (s)=> s>=80?'s-hi':s>=70?'s-mid':'s-lo';
+
+  const rows = document.getElementById('rows');
+  rows.innerHTML = CANDIDATES.map((c,i)=>`
+    <div class="row ${i===0?'active':''}" data-id="${c.id}">
+      <div class="idx">${String(i+1).padStart(2,'0')}</div>
+      <div class="score ${scoreClass(c.score)}">${c.score}${spark(c.score).replace('<span class="spark">','<span class="spark" style="color:inherit">')}</div>
+      <div class="name"><b>${c.name}</b><span class="sub">${c.current}</span></div>
+      <div class="sum">${c.summary}</div>
+      <div class="src"><span class="srctag ${srcClass(c.source)}">${c.source.toUpperCase()}</span>${c.sourceDetail?` <span class="tag">· ${c.sourceDetail}</span>`:''}</div>
+      <div class="mh"><b>${mhCount(c)}</b>/5</div>
+      <div class="age">${c.appliedAgo}</div>
+    </div>
+  `).join('');
+
+  const renderSide = (c) => {
+    const side = document.getElementById('side');
+    side.innerHTML = `
+      <div class="side-head">
+        <div class="row1">
+          <div class="score-big ${scoreClass(c.score)}" style="color:var(${c.score>=80?'--lime':c.score>=70?'--amber':'--rose'})">${c.score}<small>/100</small></div>
+          <div style="flex:1">
+            <h2>${c.name}</h2>
+            <div class="sub">${c.current} · ${c.location} · ${c.yoe} YOE</div>
+          </div>
+        </div>
+        <div class="acts">
+          <button class="btn shortlist">▸ Shortlist (S)</button>
+          <button class="btn save">✎ Save (L)</button>
+          <button class="btn reject">✕ Reject (R)</button>
+        </div>
+      </div>
+      <div class="side-body">
+        <div class="sec">
+          <div class="sec-h">Summary</div>
+          <div style="color:var(--text);font-size:13px">${c.summary}</div>
+        </div>
+        <div class="sec">
+          <div class="sec-h">Must-haves · ${mhCount(c)}/5</div>
+          <div class="mh-list">
+            ${c.mustHaves.map(m=>`<div class="mh-item ${m.pass?'':'no'}"><span class="mark">${m.pass?'✓':'✕'}</span><span>${m.label}</span></div>`).join('')}
+          </div>
+        </div>
+        <div class="sec">
+          <div class="sec-h">Nice-to-haves · ${c.niceHaves.filter(n=>n.pass).length}/${c.niceHaves.length}</div>
+          <div class="mh-list">
+            ${c.niceHaves.map(m=>`<div class="mh-item ${m.pass?'':'no'}"><span class="mark">${m.pass?'✓':'·'}</span><span>${m.label}</span></div>`).join('')}
+          </div>
+        </div>
+        <div class="sec">
+          <div class="sec-h">Strengths (3)</div>
+          ${c.strengths.map(s=>`<div class="evi good"><b>${s.title}</b>${s.evidence}</div>`).join('')}
+        </div>
+        <div class="sec">
+          <div class="sec-h">Gaps (3)</div>
+          ${c.gaps.map(s=>`<div class="evi bad"><b>${s.title}</b>${s.evidence}</div>`).join('')}
+        </div>
+        <div class="sec">
+          <div class="sec-h">Qualifying answers</div>
+          ${c.qualifying.map(q=>`<div class="qa"><b>${q.q}</b>${q.a}</div>`).join('')}
+        </div>
+        <div class="sec" style="border-bottom:0">
+          <div class="sec-h">Resume</div>
+          <div class="resume-thumb">▤ ${c.name.split(' ')[0].toLowerCase()}-resume.pdf · 2 pages · [press O to open]</div>
+        </div>
+      </div>
+    `;
+  };
+
+  renderSide(CANDIDATES[0]);
+  rows.addEventListener('click', (e)=>{
+    const row = e.target.closest('.row'); if(!row) return;
+    document.querySelectorAll('.row').forEach(r=>r.classList.remove('active'));
+    row.classList.add('active');
+    renderSide(CANDIDATES.find(c=>c.id===row.dataset.id));
+  });
+</script>
+</body>
+</html>

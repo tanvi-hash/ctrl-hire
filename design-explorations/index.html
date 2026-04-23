@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>ctrl-hire · design explorations</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Instrument+Serif&display=swap" rel="stylesheet" />
+<style>
+  *{box-sizing:border-box}
+  body{margin:0;font-family:"Inter",system-ui,sans-serif;background:#111;color:#eee;padding:40px;min-height:100vh}
+  h1{font-family:"Instrument Serif",serif;font-weight:400;font-size:38px;letter-spacing:-.01em;margin:0 0 8px}
+  p.sub{color:#999;margin:0 0 28px;font-size:14px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px;max-width:1200px}
+  a.card{display:block;text-decoration:none;color:inherit;background:#1a1a1a;border:1px solid #262626;border-radius:14px;padding:22px;transition:transform .15s ease,border-color .15s}
+  a.card:hover{transform:translateY(-2px);border-color:#444}
+  .n{color:#666;font-size:12px;font-family:ui-monospace,monospace;letter-spacing:.1em;text-transform:uppercase}
+  .t{font-size:20px;font-weight:600;margin:6px 0 8px;letter-spacing:-.01em}
+  .d{color:#999;font-size:13.5px;line-height:1.5}
+  .pal{display:flex;gap:4px;margin-top:14px}
+  .pal i{display:block;height:18px;flex:1;border-radius:4px}
+  footer{margin-top:40px;color:#555;font-size:12px}
+</style>
+</head>
+<body>
+  <h1>Design explorations — HR ranked shortlist</h1>
+  <p class="sub">Same data, same screen, four different design languages. Pick the vibe.</p>
+  <div class="grid">
+    <a class="card" href="./01-terminal.html">
+      <div class="n">01</div>
+      <div class="t">Dense terminal</div>
+      <div class="d">Monospace, deep black, electric lime. Information-max, keyboard-first. For HR triaging hundreds a day.</div>
+      <div class="pal"><i style="background:#0a0a0a"></i><i style="background:#c8ff00"></i><i style="background:#ffb020"></i><i style="background:#ff4d6d"></i><i style="background:#6ee7ff"></i></div>
+    </a>
+    <a class="card" href="./02-editorial.html">
+      <div class="n">02</div>
+      <div class="t">Editorial dossier</div>
+      <div class="d">Cream paper, Fraunces serif, pull quotes. Reading-slow, considered. Feels like a hiring periodical.</div>
+      <div class="pal"><i style="background:#f3ecdd"></i><i style="background:#9b3a1f"></i><i style="background:#b5833a"></i><i style="background:#4b5a2b"></i><i style="background:#1a1613"></i></div>
+    </a>
+    <a class="card" href="./03-brutalist.html">
+      <div class="n">03</div>
+      <div class="t">Swiss brutalist</div>
+      <div class="d">Heavy black grid lines, huge scores, Space Grotesk + Mono. Loud, confident, poster-like.</div>
+      <div class="pal"><i style="background:#f2f0e8"></i><i style="background:#0a0a0a"></i><i style="background:#ff2d1f"></i><i style="background:#cdff00"></i><i style="background:#1a29ff"></i></div>
+    </a>
+    <a class="card" href="./04-soft.html">
+      <div class="n">04</div>
+      <div class="t">Soft human</div>
+      <div class="d">Pastel gradients, rounded cards, score rings, Instrument Serif + Inter. Warm, friendly, modern SaaS.</div>
+      <div class="pal"><i style="background:#fef1ee"></i><i style="background:#f4eefb"></i><i style="background:#ff7a7a"></i><i style="background:#8b7fd9"></i><i style="background:#5ecaa5"></i></div>
+    </a>
+  </div>
+  <footer>Shared data in <code>_data.js</code>. Click any candidate in the list to swap the side panel.</footer>
+</body>
+</html>

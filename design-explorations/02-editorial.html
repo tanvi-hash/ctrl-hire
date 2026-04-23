@@ -1,0 +1,246 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>ctrl-hire · 02 Editorial</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;0,9..144,700;1,9..144,400&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --paper:#f3ecdd; --paper-2:#ede4cf; --ink:#1a1613; --ink-2:#3a3128;
+    --muted:#7a6f60; --rule:#d9ccb1; --rust:#9b3a1f; --ochre:#b5833a; --olive:#4b5a2b;
+    --ok:#4b6b2a; --bad:#9b3a1f;
+    --serif:"Fraunces","Source Serif 4",Georgia,serif;
+    --body:"Source Serif 4",Georgia,serif;
+    --mono:"JetBrains Mono",ui-monospace,monospace;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.55}
+  body{background-image:radial-gradient(1200px 500px at 20% -20%, rgba(255,255,255,.5), transparent 60%)}
+
+  .masthead{border-bottom:2px solid var(--ink);padding:28px 48px 18px;display:grid;grid-template-columns:1fr auto 1fr;align-items:end;gap:32px}
+  .mast-l{font-family:var(--mono);font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted)}
+  .mast-c{text-align:center;font-family:var(--serif);font-weight:300;font-size:42px;letter-spacing:-.02em;line-height:1}
+  .mast-c small{display:block;font-style:italic;font-size:13px;color:var(--muted);margin-top:6px;letter-spacing:.02em;font-family:var(--body)}
+  .mast-r{text-align:right;font-family:var(--mono);font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted)}
+
+  /* Role header as "dateline" */
+  .dateline{padding:28px 48px 0;max-width:1280px;margin:0 auto}
+  .role-kicker{font-family:var(--mono);font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--rust)}
+  .role-title{font-family:var(--serif);font-weight:400;font-size:52px;letter-spacing:-.02em;line-height:1.05;margin:6px 0 8px}
+  .role-title em{font-style:italic;font-weight:300}
+  .role-sub{color:var(--muted);font-size:16px;font-style:italic;max-width:780px}
+  .role-strip{display:flex;gap:36px;margin:22px 0 8px;padding:16px 0;border-top:1px solid var(--rule);border-bottom:1px solid var(--rule);font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);flex-wrap:wrap}
+  .role-strip b{color:var(--ink);font-weight:500}
+
+  /* Body */
+  .page{max-width:1280px;margin:0 auto;padding:28px 48px 60px;display:grid;grid-template-columns:minmax(0,1fr) 480px;gap:48px;align-items:start}
+
+  /* Candidate entries as article cards */
+  .listhead{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:18px}
+  .listhead h2{font-family:var(--serif);font-weight:400;font-size:28px;margin:0;letter-spacing:-.01em}
+  .listhead h2 em{font-style:italic}
+  .listhead .count{font-family:var(--mono);font-size:12px;color:var(--muted);letter-spacing:.1em;text-transform:uppercase}
+  .tabs{display:flex;gap:18px;border-bottom:1px solid var(--rule);margin-bottom:10px;font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:.18em;color:var(--muted)}
+  .tabs .t{padding:8px 0;border-bottom:2px solid transparent;cursor:pointer}
+  .tabs .t.on{border-bottom-color:var(--ink);color:var(--ink)}
+
+  .entry{display:grid;grid-template-columns:72px 1fr;gap:24px;padding:22px 0;border-bottom:1px solid var(--rule);cursor:pointer;position:relative}
+  .entry:hover{background:rgba(255,255,255,.3)}
+  .entry.on{background:rgba(255,255,255,.5)}
+  .entry.on::before{content:"";position:absolute;left:-20px;top:24px;bottom:24px;width:3px;background:var(--rust)}
+  .score-box{text-align:center}
+  .score-num{font-family:var(--serif);font-weight:400;font-size:44px;line-height:1;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+  .score-num.hi{color:var(--olive)}
+  .score-num.mid{color:var(--ochre)}
+  .score-num.lo{color:var(--rust)}
+  .score-lbl{font-family:var(--mono);font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);margin-top:4px}
+  .entry-body h3{font-family:var(--serif);font-weight:500;font-size:22px;margin:0 0 4px;letter-spacing:-.01em}
+  .byline{font-family:var(--body);font-style:italic;color:var(--muted);font-size:14px;margin-bottom:10px}
+  .byline b{font-style:normal;color:var(--ink-2);font-weight:500}
+  .lede{font-size:15.5px;line-height:1.6;color:var(--ink-2);margin:0 0 12px;max-width:62ch}
+  .tags{display:flex;flex-wrap:wrap;gap:6px 12px;font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+  .tags .src{color:var(--rust)}
+  .tags .mh{color:var(--olive)}
+  .tags .gap{color:var(--ochre)}
+
+  /* Side dossier */
+  .dossier{position:sticky;top:20px;background:#fbf4e1;border:1px solid var(--rule);border-radius:2px;padding:28px 28px 20px;box-shadow:0 12px 40px -20px rgba(60,40,20,.3);max-height:calc(100vh - 40px);overflow:auto}
+  .dossier::before{content:"";display:block;height:4px;background:var(--ink);margin:-28px -28px 18px}
+  .doss-kicker{font-family:var(--mono);font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--rust);margin-bottom:6px}
+  .doss-name{font-family:var(--serif);font-weight:400;font-size:30px;letter-spacing:-.01em;line-height:1.1;margin:0 0 6px}
+  .doss-byline{font-family:var(--body);font-style:italic;color:var(--muted);font-size:14px}
+  .doss-score-row{display:flex;justify-content:space-between;align-items:flex-end;margin:18px 0 8px;padding-bottom:12px;border-bottom:1px solid var(--rule)}
+  .doss-score{font-family:var(--serif);font-weight:300;font-size:68px;line-height:1;letter-spacing:-.03em}
+  .doss-score.hi{color:var(--olive)} .doss-score.mid{color:var(--ochre)} .doss-score.lo{color:var(--rust)}
+  .doss-score small{font-size:18px;color:var(--muted);font-weight:400}
+  .doss-acts{display:flex;flex-direction:column;gap:8px;font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase}
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:7px 12px;border:1px solid var(--ink);background:transparent;color:var(--ink);cursor:pointer;font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;border-radius:2px}
+  .btn.primary{background:var(--ink);color:var(--paper)}
+  .btn.warn{border-color:var(--rust);color:var(--rust)}
+
+  .sec{padding:16px 0;border-bottom:1px dotted var(--rule)}
+  .sec:last-child{border-bottom:0}
+  .sec-h{font-family:var(--mono);font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:var(--rust);margin-bottom:10px}
+  .checks{display:flex;flex-direction:column;gap:6px;font-size:14.5px}
+  .checks .c{display:grid;grid-template-columns:18px 1fr;gap:10px;align-items:baseline}
+  .checks .c.no{color:var(--muted)}
+  .checks .mk{font-family:var(--serif);font-weight:500}
+  .checks .mk.ok{color:var(--olive)} .checks .mk.bad{color:var(--rust)}
+  .pullquote{font-family:var(--serif);font-style:italic;font-size:17px;line-height:1.5;color:var(--ink);border-left:3px solid var(--ochre);padding:6px 0 6px 16px;margin:10px 0}
+  .pullquote b{font-style:normal;display:block;font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--rust);font-weight:500;margin-bottom:4px;font-family:var(--mono)}
+  .qa{font-size:14.5px;margin-bottom:10px}
+  .qa b{display:block;font-family:var(--mono);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:2px;font-weight:500}
+  .resume-card{border:1px solid var(--rule);padding:14px;background:rgba(255,255,255,.4);font-family:var(--mono);font-size:12px;color:var(--ink-2);display:flex;justify-content:space-between;align-items:center}
+  .resume-card a{color:var(--rust);text-decoration:none}
+
+  @media (max-width:1100px){
+    .page{grid-template-columns:1fr;gap:28px}
+    .dossier{position:relative;top:0}
+  }
+</style>
+</head>
+<body>
+  <header class="masthead">
+    <div class="mast-l">Vol. 0 · No. 1</div>
+    <div class="mast-c">ctrl—hire<small>the hiring dossier</small></div>
+    <div class="mast-r">Wed · 23 Apr 2026 · HR · Alex R.</div>
+  </header>
+
+  <section class="dateline">
+    <div class="role-kicker">Open requisition — Payments</div>
+    <h1 class="role-title">Senior Frontend <em>Engineer</em></h1>
+    <p class="role-sub">Shortlisting 47 applicants across four channels. AI-scored; human-confirmed. Ten candidates await your review.</p>
+    <div class="role-strip">
+      <span><b>47</b> applied</span>
+      <span><b>42</b> scored</span>
+      <span style="color:var(--rust)"><b>10</b> to review</span>
+      <span><b>0</b> shortlisted</span>
+      <span>HM · <b>Meera Subramaniam</b></span>
+      <span>Comp · <b>₹42–58L</b></span>
+      <span>Posted · <b>3 days ago</b></span>
+    </div>
+  </section>
+
+  <main class="page">
+    <div>
+      <div class="listhead">
+        <h2>Ranked <em>candidates</em></h2>
+        <div class="count">Sorted by match · descending</div>
+      </div>
+      <div class="tabs">
+        <div class="t on">All · 10</div>
+        <div class="t">Top tier · 4</div>
+        <div class="t">Referrals · 2</div>
+        <div class="t">Must-haves ✓ · 4</div>
+        <div class="t">Saved · 0</div>
+      </div>
+      <div id="entries"></div>
+    </div>
+    <aside>
+      <div class="dossier" id="dossier"></div>
+    </aside>
+  </main>
+
+<script src="./_data.js"></script>
+<script>
+  const tier = s => s>=80?'hi':s>=70?'mid':'lo';
+  const mhCount = c=> c.mustHaves.filter(m=>m.pass).length;
+  const entries = document.getElementById('entries');
+  entries.innerHTML = CANDIDATES.map((c,i)=>`
+    <article class="entry ${i===0?'on':''}" data-id="${c.id}">
+      <div class="score-box">
+        <div class="score-num ${tier(c.score)}">${c.score}</div>
+        <div class="score-lbl">of 100</div>
+      </div>
+      <div class="entry-body">
+        <h3>${c.name}</h3>
+        <div class="byline">
+          <b>${c.current}</b> · ${c.location} · ${c.yoe} yrs · applied ${c.appliedAgo} ago
+        </div>
+        <p class="lede">${c.summary}</p>
+        <div class="tags">
+          <span class="src">◆ ${c.source}${c.sourceDetail?` — ${c.sourceDetail}`:''}</span>
+          <span class="mh">▲ must-haves ${mhCount(c)}/5</span>
+          <span class="gap">▽ ${c.gaps.length} gaps</span>
+        </div>
+      </div>
+    </article>
+  `).join('');
+
+  const renderDoss = (c) => {
+    const t = tier(c.score);
+    document.getElementById('dossier').innerHTML = `
+      <div class="doss-kicker">Candidate dossier · #${CANDIDATES.findIndex(x=>x.id===c.id)+1} ranked</div>
+      <h2 class="doss-name">${c.name}</h2>
+      <div class="doss-byline">${c.current} · ${c.location} · ${c.yoe} yrs in industry</div>
+      <div class="doss-score-row">
+        <div class="doss-score ${t}">${c.score}<small> / 100</small></div>
+        <div style="text-align:right;font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)">
+          Must-haves · <b style="color:var(--olive);font-weight:500">${mhCount(c)}/5</b><br/>
+          Nice-to-haves · <b style="color:var(--ochre);font-weight:500">${c.niceHaves.filter(n=>n.pass).length}/5</b><br/>
+          Source · <b style="color:var(--rust);font-weight:500">${c.source}</b>
+        </div>
+      </div>
+      <div class="doss-acts" style="flex-direction:row;gap:6px">
+        <button class="btn primary" style="flex:1">Shortlist</button>
+        <button class="btn" style="flex:1">Save for later</button>
+        <button class="btn warn" style="flex:1">Reject</button>
+      </div>
+
+      <div class="sec">
+        <div class="sec-h">The gist</div>
+        <p style="margin:0;font-size:15.5px;line-height:1.55;color:var(--ink)">${c.summary}</p>
+      </div>
+
+      <div class="sec">
+        <div class="sec-h">Must-haves</div>
+        <div class="checks">
+          ${c.mustHaves.map(m=>`<div class="c ${m.pass?'':'no'}"><span class="mk ${m.pass?'ok':'bad'}">${m.pass?'✓':'✕'}</span>${m.label}</div>`).join('')}
+        </div>
+      </div>
+
+      <div class="sec">
+        <div class="sec-h">Nice-to-haves</div>
+        <div class="checks">
+          ${c.niceHaves.map(m=>`<div class="c ${m.pass?'':'no'}"><span class="mk ${m.pass?'ok':'bad'}">${m.pass?'✓':'·'}</span>${m.label}</div>`).join('')}
+        </div>
+      </div>
+
+      <div class="sec">
+        <div class="sec-h">Three strengths</div>
+        ${c.strengths.map(s=>`<div class="pullquote"><b>${s.title}</b>${s.evidence}</div>`).join('')}
+      </div>
+
+      <div class="sec">
+        <div class="sec-h">Three gaps</div>
+        ${c.gaps.map(g=>`<div class="pullquote" style="border-left-color:var(--rust)"><b style="color:var(--rust)">${g.title}</b>${g.evidence}</div>`).join('')}
+      </div>
+
+      <div class="sec">
+        <div class="sec-h">Qualifying answers</div>
+        ${c.qualifying.map(q=>`<div class="qa"><b>${q.q}</b>${q.a}</div>`).join('')}
+      </div>
+
+      <div class="sec">
+        <div class="sec-h">Attachment</div>
+        <div class="resume-card">
+          <span>${c.name.split(' ')[0].toLowerCase()}-resume.pdf · 2 pp.</span>
+          <a href="#">View →</a>
+        </div>
+      </div>
+    `;
+  };
+
+  renderDoss(CANDIDATES[0]);
+  entries.addEventListener('click',(e)=>{
+    const el = e.target.closest('.entry'); if(!el) return;
+    document.querySelectorAll('.entry').forEach(x=>x.classList.remove('on'));
+    el.classList.add('on');
+    renderDoss(CANDIDATES.find(c=>c.id===el.dataset.id));
+  });
+</script>
+</body>
+</html>

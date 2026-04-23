@@ -1,0 +1,284 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>ctrl-hire · 03 Brutalist</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --bg:#f2f0e8; --ink:#0a0a0a; --panel:#ffffff;
+    --hot:#ff2d1f; --acid:#cdff00; --electric:#1a29ff;
+    --muted:#6b6b6b;
+    --sans:"Space Grotesk",ui-sans-serif,system-ui,sans-serif;
+    --mono:"Space Mono",ui-monospace,monospace;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:14px;line-height:1.4;-webkit-font-smoothing:antialiased}
+  ::selection{background:var(--hot);color:#fff}
+
+  .shell{max-width:1600px;margin:0 auto;border-left:2px solid var(--ink);border-right:2px solid var(--ink);min-height:100vh}
+
+  /* Top band */
+  .band{display:grid;grid-template-columns:auto 1fr auto;align-items:center;border-bottom:2px solid var(--ink);background:var(--ink);color:var(--bg);font-family:var(--mono);font-size:11px;letter-spacing:.2em;text-transform:uppercase;padding:10px 20px}
+  .band b{font-family:var(--sans);font-weight:700;font-size:14px;letter-spacing:.08em;color:var(--acid)}
+  .band span{opacity:.85}
+  .band .ticker{overflow:hidden;white-space:nowrap;padding:0 20px;color:#a5a5a5}
+
+  /* Role slab */
+  .hero{display:grid;grid-template-columns:3fr 2fr;border-bottom:2px solid var(--ink)}
+  .hero-l{padding:36px 28px 28px;border-right:2px solid var(--ink)}
+  .kicker{font-family:var(--mono);font-size:11px;letter-spacing:.3em;text-transform:uppercase;color:var(--hot);font-weight:700;margin-bottom:12px}
+  h1.role{font-size:68px;line-height:.92;letter-spacing:-.03em;font-weight:600;margin:0}
+  h1.role u{text-decoration:none;background:var(--acid);padding:0 6px}
+  .sub-strip{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px;font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:.12em}
+  .chip{border:2px solid var(--ink);padding:5px 10px;background:var(--panel)}
+  .chip b{color:var(--hot)}
+
+  .hero-r{display:grid;grid-template-columns:repeat(4,1fr);grid-template-rows:1fr 1fr;background:var(--panel)}
+  .stat{border-bottom:2px solid var(--ink);border-right:2px solid var(--ink);padding:18px 16px;display:flex;flex-direction:column;justify-content:space-between;min-height:100px}
+  .stat:nth-child(4n){border-right:0}
+  .stat:nth-last-child(-n+4){border-bottom:0}
+  .stat .l{font-family:var(--mono);font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted)}
+  .stat .v{font-size:44px;font-weight:600;letter-spacing:-.02em;line-height:1}
+  .stat.big{grid-column:span 2}
+  .stat.accent{background:var(--acid)}
+  .stat.accent .v{color:var(--ink)}
+  .stat.ink{background:var(--ink);color:var(--bg)}
+  .stat.ink .l{color:#a5a5a5}
+  .stat.ink .v{color:var(--acid)}
+
+  .cta-band{display:flex;gap:0;border-bottom:2px solid var(--ink)}
+  .cta{flex:1;border-right:2px solid var(--ink);padding:14px 18px;font-family:var(--mono);font-size:12px;letter-spacing:.16em;text-transform:uppercase;font-weight:700;background:var(--panel);cursor:pointer;display:flex;align-items:center;justify-content:space-between}
+  .cta:last-child{border-right:0}
+  .cta:hover{background:var(--ink);color:var(--bg)}
+  .cta.hero{background:var(--hot);color:#fff}
+  .cta.hero:hover{background:var(--ink);color:var(--hot)}
+  .cta .arrow{font-family:var(--sans);font-size:18px}
+
+  /* Body */
+  .body{display:grid;grid-template-columns:1fr 560px}
+
+  /* List column */
+  .listcol{border-right:2px solid var(--ink)}
+  .listnav{display:flex;gap:0;border-bottom:2px solid var(--ink);background:var(--panel)}
+  .listnav .t{padding:12px 18px;font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;font-weight:700;border-right:2px solid var(--ink);cursor:pointer}
+  .listnav .t.on{background:var(--ink);color:var(--bg)}
+  .listnav .sp{flex:1;border-right:2px solid var(--ink);display:flex;align-items:center;padding:0 14px;color:var(--muted);font-family:var(--mono);font-size:11px}
+  .listnav .sp input{border:0;background:transparent;font-family:var(--mono);font-size:12px;outline:none;width:100%;color:var(--ink)}
+  .listnav .sort{padding:12px 18px;font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;font-weight:700}
+
+  .row{display:grid;grid-template-columns:140px 1fr 180px;border-bottom:2px solid var(--ink);cursor:pointer;min-height:140px;background:var(--panel)}
+  .row:hover{background:#fff}
+  .row.on{background:var(--ink);color:var(--bg)}
+  .row.on .src{background:var(--hot);color:#fff}
+  .row.on .mh-pill{background:var(--acid);color:var(--ink)}
+  .row.on .lede{color:#d8d8d8}
+  .row.on .sub{color:#9a9a9a}
+
+  .cell{padding:18px 16px;border-right:2px solid var(--ink);display:flex;flex-direction:column;justify-content:space-between}
+  .cell:last-child{border-right:0}
+  .big-num{font-size:72px;font-weight:600;letter-spacing:-.04em;line-height:.85;font-variant-numeric:tabular-nums}
+  .big-num.hi{color:var(--ink)}
+  .row.on .big-num.hi{color:var(--acid)}
+  .big-num.mid{color:var(--muted)}
+  .big-num.lo{color:var(--hot)}
+  .mh-pill{display:inline-block;align-self:flex-start;margin-top:8px;font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;padding:2px 6px;background:var(--ink);color:var(--acid);font-weight:700}
+  .nm{font-size:22px;font-weight:600;letter-spacing:-.015em;line-height:1.1;margin-bottom:4px}
+  .sub{font-family:var(--mono);font-size:11px;color:var(--muted);letter-spacing:.04em;margin-bottom:10px}
+  .lede{font-size:14px;line-height:1.4;color:var(--ink);max-width:52ch}
+  .row.on .lede{color:#ececec}
+  .rightcol{align-items:flex-end;text-align:right}
+  .src{display:inline-block;font-family:var(--mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;padding:4px 8px;background:var(--ink);color:#fff;font-weight:700}
+  .src.ref{background:var(--acid);color:var(--ink)}
+  .src.li{background:var(--electric);color:#fff}
+  .src.nk{background:var(--hot);color:#fff}
+  .src.cp{background:var(--panel);color:var(--ink);border:2px solid var(--ink)}
+  .meta{font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;color:var(--muted);margin-top:auto;text-align:right}
+  .row.on .meta{color:#a5a5a5}
+
+  /* Detail */
+  .detail{position:sticky;top:0;align-self:start;height:100vh;overflow:auto;background:var(--bg)}
+  .d-head{padding:28px 28px 18px;border-bottom:2px solid var(--ink);background:var(--acid)}
+  .d-num{font-size:140px;font-weight:600;letter-spacing:-.05em;line-height:.85;margin-bottom:12px;font-variant-numeric:tabular-nums}
+  .d-num .of{font-size:32px;color:rgba(10,10,10,.5);font-weight:500}
+  .d-nm{font-size:34px;font-weight:600;letter-spacing:-.02em;line-height:1.05;margin-bottom:6px}
+  .d-sub{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink);font-weight:700}
+  .d-cta{display:grid;grid-template-columns:2fr 1fr 1fr;border-bottom:2px solid var(--ink)}
+  .d-cta button{border:0;border-right:2px solid var(--ink);padding:18px 10px;font-family:var(--mono);font-weight:700;font-size:12px;letter-spacing:.18em;text-transform:uppercase;cursor:pointer;background:var(--panel)}
+  .d-cta button:last-child{border-right:0}
+  .d-cta .accept{background:var(--ink);color:var(--acid)}
+  .d-cta .reject{background:var(--hot);color:#fff}
+
+  .d-sec{padding:22px 28px;border-bottom:2px solid var(--ink)}
+  .d-sec h3{margin:0 0 14px;font-family:var(--mono);font-size:10px;letter-spacing:.24em;text-transform:uppercase;font-weight:700;color:var(--ink)}
+  .d-sec h3 span{color:var(--hot)}
+  .mh-grid{display:grid;grid-template-columns:1fr 1fr;gap:0;border:2px solid var(--ink)}
+  .mh-grid div{padding:10px 12px;border-right:2px solid var(--ink);border-bottom:2px solid var(--ink);font-size:13px;display:flex;align-items:center;gap:8px}
+  .mh-grid div:nth-child(2n){border-right:0}
+  .mh-grid div:nth-last-child(-n+2){border-bottom:0}
+  .mh-grid .y{background:var(--acid)}
+  .mh-grid .n{color:var(--muted);text-decoration:line-through;text-decoration-color:var(--hot);text-decoration-thickness:2px}
+  .evi{border-left:4px solid var(--ink);padding:10px 14px;margin:10px 0;background:var(--panel)}
+  .evi.bad{border-left-color:var(--hot)}
+  .evi b{display:block;font-size:15px;font-weight:600;margin-bottom:3px;letter-spacing:-.01em}
+  .evi p{margin:0;font-size:13px;color:var(--muted);line-height:1.4}
+  .qa{margin-bottom:14px;border:2px solid var(--ink);padding:10px 12px;background:var(--panel)}
+  .qa b{display:block;font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:700;margin-bottom:4px}
+  .qa span{font-size:14px;font-weight:500}
+  .resume-slab{display:flex;justify-content:space-between;align-items:center;border:2px solid var(--ink);background:var(--ink);color:var(--acid);padding:14px 16px;font-family:var(--mono);font-size:12px;letter-spacing:.12em;text-transform:uppercase;font-weight:700}
+  .resume-slab a{color:var(--acid);text-decoration:none;padding:4px 10px;background:var(--hot);color:#fff}
+</style>
+</head>
+<body>
+<div class="shell">
+  <header class="band">
+    <div><b>CTRL-HIRE</b> &nbsp; / &nbsp; 0.1.0</div>
+    <div class="ticker">● SCORER ONLINE · claude-haiku v1.3 · 47 applications · 42 scored · 10 await review · NEVER AUTO-REJECT</div>
+    <div>HR · Alex R. · 23.04.26</div>
+  </header>
+
+  <section class="hero">
+    <div class="hero-l">
+      <div class="kicker">Open requisition · Payments team</div>
+      <h1 class="role">Senior <u>Frontend</u><br/>Engineer.</h1>
+      <div class="sub-strip">
+        <div class="chip">Req · <b>frontend-sr-02</b></div>
+        <div class="chip">Loc · <b>BLR / Remote</b></div>
+        <div class="chip">Comp · <b>₹42–58L</b></div>
+        <div class="chip">HM · <b>Meera S.</b></div>
+        <div class="chip">Posted · <b>3d</b></div>
+      </div>
+    </div>
+    <div class="hero-r">
+      <div class="stat"><div class="l">Applied</div><div class="v">47</div></div>
+      <div class="stat"><div class="l">Scored</div><div class="v">42</div></div>
+      <div class="stat accent"><div class="l">To review</div><div class="v">10</div></div>
+      <div class="stat"><div class="l">Shortlist</div><div class="v">0</div></div>
+      <div class="stat"><div class="l">Rejected</div><div class="v">15</div></div>
+      <div class="stat"><div class="l">Top score</div><div class="v">92</div></div>
+      <div class="stat ink big"><div class="l">Median match</div><div class="v">74</div></div>
+    </div>
+  </section>
+
+  <div class="cta-band">
+    <div class="cta">Copy application URLs →</div>
+    <div class="cta">Assign interviewer pool →</div>
+    <div class="cta">View rubric →</div>
+    <div class="cta hero">Send shortlist to HM →</div>
+  </div>
+
+  <div class="body">
+    <div class="listcol">
+      <div class="listnav">
+        <div class="t on">All · 10</div>
+        <div class="t">≥80 · 4</div>
+        <div class="t">Referrals · 2</div>
+        <div class="t">Must ✓ · 4</div>
+        <div class="sp"><input placeholder="> filter_" /></div>
+        <div class="sort">Sort: SCORE ▼</div>
+      </div>
+      <div id="rows"></div>
+    </div>
+    <div class="detail" id="detail"></div>
+  </div>
+</div>
+
+<script src="./_data.js"></script>
+<script>
+  const tier = s=> s>=80?'hi':s>=70?'mid':'lo';
+  const srcCls = {LinkedIn:"li",Referral:"ref",Naukri:"nk","Career page":"cp"};
+  const mhCount = c=> c.mustHaves.filter(m=>m.pass).length;
+  const rows = document.getElementById('rows');
+  rows.innerHTML = CANDIDATES.map((c,i)=>`
+    <div class="row ${i===0?'on':''}" data-id="${c.id}">
+      <div class="cell">
+        <div>
+          <div class="big-num ${tier(c.score)}">${c.score}</div>
+          <div class="mh-pill">${mhCount(c)}/5 MUST</div>
+        </div>
+        <div class="sub" style="margin:0">#${String(i+1).padStart(2,'0')} ranked</div>
+      </div>
+      <div class="cell">
+        <div>
+          <div class="nm">${c.name}</div>
+          <div class="sub">${c.current} · ${c.location} · ${c.yoe} YRS</div>
+          <div class="lede">${c.summary}</div>
+        </div>
+      </div>
+      <div class="cell rightcol">
+        <span class="src ${srcCls[c.source]}">${c.source}${c.sourceDetail?` · ${c.sourceDetail}`:''}</span>
+        <div class="meta">Applied ${c.appliedAgo} ago</div>
+      </div>
+    </div>
+  `).join('');
+
+  const renderDetail = (c) => {
+    document.getElementById('detail').innerHTML = `
+      <div class="d-head">
+        <div class="d-num">${c.score}<span class="of"> / 100</span></div>
+        <div class="d-nm">${c.name}</div>
+        <div class="d-sub">${c.current} · ${c.location} · ${c.yoe} YRS</div>
+      </div>
+      <div class="d-cta">
+        <button class="accept">▸ Shortlist</button>
+        <button>Save</button>
+        <button class="reject">Reject</button>
+      </div>
+
+      <div class="d-sec">
+        <h3>Summary <span>·</span> AI-drafted</h3>
+        <p style="margin:0;font-size:16px;line-height:1.5">${c.summary}</p>
+      </div>
+
+      <div class="d-sec">
+        <h3>Must-haves <span>${mhCount(c)}/5</span></h3>
+        <div class="mh-grid">
+          ${c.mustHaves.map(m=>`<div class="${m.pass?'y':'n'}">${m.pass?'▲':'✕'} ${m.label}</div>`).join('')}
+        </div>
+      </div>
+
+      <div class="d-sec">
+        <h3>Nice-to-haves <span>${c.niceHaves.filter(n=>n.pass).length}/5</span></h3>
+        <div class="mh-grid">
+          ${c.niceHaves.map(m=>`<div class="${m.pass?'y':'n'}">${m.pass?'▲':'✕'} ${m.label}</div>`).join('')}
+        </div>
+      </div>
+
+      <div class="d-sec">
+        <h3>Strengths <span>·</span> 3</h3>
+        ${c.strengths.map(s=>`<div class="evi"><b>${s.title}</b><p>${s.evidence}</p></div>`).join('')}
+      </div>
+
+      <div class="d-sec">
+        <h3>Gaps <span>·</span> 3</h3>
+        ${c.gaps.map(g=>`<div class="evi bad"><b>${g.title}</b><p>${g.evidence}</p></div>`).join('')}
+      </div>
+
+      <div class="d-sec">
+        <h3>Qualifying answers</h3>
+        ${c.qualifying.map(q=>`<div class="qa"><b>${q.q}</b><span>${q.a}</span></div>`).join('')}
+      </div>
+
+      <div class="d-sec">
+        <h3>Resume</h3>
+        <div class="resume-slab">
+          <span>▤ ${c.name.split(' ')[0].toLowerCase()}-resume.pdf · 2pp</span>
+          <a href="#">OPEN</a>
+        </div>
+      </div>
+    `;
+  };
+
+  renderDetail(CANDIDATES[0]);
+  rows.addEventListener('click',(e)=>{
+    const r = e.target.closest('.row'); if(!r) return;
+    document.querySelectorAll('.row').forEach(x=>x.classList.remove('on'));
+    r.classList.add('on');
+    renderDetail(CANDIDATES.find(c=>c.id===r.dataset.id));
+  });
+</script>
+</body>
+</html>
