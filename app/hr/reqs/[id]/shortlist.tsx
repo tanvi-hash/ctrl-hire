@@ -29,6 +29,19 @@ export interface RankedApplication {
   } | null;
 }
 
+interface Interviewer {
+  id: string;
+  name: string;
+  email: string;
+}
+
+interface Assignment {
+  id: string;
+  round_label: string;
+  created_at: string;
+  interviewer: Interviewer | null;
+}
+
 interface DetailPayload {
   id: string;
   candidate_name: string;
@@ -44,6 +57,7 @@ interface DetailPayload {
     gaps: string[];
     summary: string;
   } | null;
+  assignments: Assignment[];
 }
 
 type FilterStage = "all" | Stage;
@@ -392,6 +406,7 @@ function SidePanel({
   const [detail, setDetail] = useState<DetailPayload | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [detailRev, setDetailRev] = useState(0);
 
   useEffect(() => {
     if (!selectedId) {
@@ -422,7 +437,7 @@ function SidePanel({
     return () => {
       cancelled = true;
     };
-  }, [selectedId]);
+  }, [selectedId, detailRev]);
 
   useEffect(() => {
     if (!selectedId) return;
@@ -470,6 +485,7 @@ function SidePanel({
             detail={detail}
             onAction={(kind) => onAction(detail.id, kind)}
             onRetry={() => onRetry(detail.id)}
+            onAssigned={() => setDetailRev((r) => r + 1)}
           />
         )}
       </aside>
@@ -497,10 +513,12 @@ function PanelContent({
   detail,
   onAction,
   onRetry,
+  onAssigned,
 }: {
   detail: DetailPayload;
   onAction: (kind: ActionKind) => Promise<void> | void;
   onRetry: () => Promise<void> | void;
+  onAssigned: () => void;
 }) {
   return (
     <div className="flex-1 overflow-y-auto">
@@ -550,6 +568,13 @@ function PanelContent({
         )}
       </section>
 
+      <AssignmentsSection
+        applicationId={detail.id}
+        status={detail.status}
+        assignments={detail.assignments}
+        onAssigned={onAssigned}
+      />
+
       <div className="px-6 pb-6">
         {detail.score ? (
           <>
@@ -578,6 +603,185 @@ function PanelContent({
             This application hasn&apos;t been scored yet. Click Retry above to score with Gemini.
           </div>
         )}
+      </div>
+    </div>
+  );
+}
+
+// ─── Interviewer assignment section ──────────────────────────────────────────
+
+function AssignmentsSection({
+  applicationId,
+  status,
+  assignments,
+  onAssigned,
+}: {
+  applicationId: string;
+  status: Stage;
+  assignments: Assignment[];
+  onAssigned: () => void;
+}) {
+  const canAssign = status === "shortlisted";
+
+  return (
+    <section className="border-b border-line px-6 py-4">
+      <div className="mb-2.5 text-[10.5px] font-semibold uppercase tracking-[0.1em] text-muted">
+        Interviews {assignments.length > 0 && <span className="text-ink-soft">· {assignments.length} assigned</span>}
+      </div>
+
+      {assignments.length > 0 && (
+        <ul className="mb-3 flex flex-col gap-1.5">
+          {assignments.map((a) => (
+            <li key={a.id} className="flex items-center gap-2 text-[13px]">
+              <span className="inline-flex items-center rounded-full bg-line-2 px-2.5 py-0.5 text-[11.5px] font-medium text-ink-soft">
+                {a.round_label}
+              </span>
+              <span className="text-ink">{a.interviewer?.name ?? "Unknown"}</span>
+              {a.interviewer?.email && (
+                <span className="truncate text-[12px] text-muted">· {a.interviewer.email}</span>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {canAssign ? (
+        <AssignForm applicationId={applicationId} onAssigned={onAssigned} />
+      ) : (
+        <div className="rounded-md border border-dashed border-line bg-line-2 px-3 py-2 text-[12.5px] text-muted">
+          Approve this candidate to assign interviewers.
+        </div>
+      )}
+    </section>
+  );
+}
+
+function AssignForm({
+  applicationId,
+  onAssigned,
+}: {
+  applicationId: string;
+  onAssigned: () => void;
+}) {
+  const [interviewers, setInterviewers] = useState<Interviewer[] | null>(null);
+  const [fetchError, setFetchError] = useState<string | null>(null);
+  const [picked, setPicked] = useState<Set<string>>(new Set());
+  const [round, setRound] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/interviewers")
+      .then(async (r) => {
+        if (!r.ok) throw new Error(`Failed (${r.status}).`);
+        return (await r.json()) as { interviewers: Interviewer[] };
+      })
+      .then((d) => {
+        if (!cancelled) setInterviewers(d.interviewers);
+      })
+      .catch((e: Error) => {
+        if (!cancelled) setFetchError(e.message);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const toggle = (id: string) => {
+    setPicked((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const submit = async () => {
+    if (picked.size === 0 || !round.trim() || busy) return;
+    setBusy(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/applications/${applicationId}/assignments`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          interviewer_ids: [...picked],
+          round_label: round.trim(),
+        }),
+      });
+      if (!res.ok) {
+        const body: { error?: string } = await res.json().catch(() => ({}));
+        throw new Error(body.error ?? `Failed (${res.status}).`);
+      }
+      setPicked(new Set());
+      setRound("");
+      onAssigned();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Couldn't assign.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="space-y-2.5 rounded-md border border-dashed border-line bg-card/70 p-3">
+      <div className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted">
+        Assign interviewer(s)
+      </div>
+
+      {fetchError ? (
+        <div className="text-[12px] text-stage-rejected-fg">{fetchError}</div>
+      ) : interviewers === null ? (
+        <div className="text-[12px] text-muted">Loading interviewers…</div>
+      ) : interviewers.length === 0 ? (
+        <div className="text-[12px] text-muted">No interviewers in the directory.</div>
+      ) : (
+        <div className="flex flex-wrap gap-1.5">
+          {interviewers.map((i) => {
+            const on = picked.has(i.id);
+            return (
+              <button
+                key={i.id}
+                type="button"
+                onClick={() => toggle(i.id)}
+                title={i.email}
+                className={`inline-flex items-center rounded-full border px-3 py-1 text-[12.5px] font-medium transition-colors ${
+                  on
+                    ? "border-ink bg-ink text-white"
+                    : "border-line bg-card text-ink-soft hover:border-[var(--color-line-hover)] hover:text-ink"
+                }`}
+              >
+                {i.name}
+              </button>
+            );
+          })}
+        </div>
+      )}
+
+      <input
+        value={round}
+        onChange={(e) => setRound(e.target.value)}
+        placeholder="Round label (e.g. Screen, Tech, Final)"
+        maxLength={50}
+        className="w-full rounded-md border border-line bg-card px-3 py-2 text-[13px] text-ink outline-none placeholder:text-muted focus:border-[var(--color-line-hover)]"
+      />
+
+      {error && <div className="text-[12px] text-stage-rejected-fg">{error}</div>}
+
+      <div className="flex items-center justify-between">
+        <div className="text-[11.5px] text-muted">
+          {picked.size === 0
+            ? "Pick one or more interviewers"
+            : `${picked.size} selected`}
+        </div>
+        <Button
+          variant="primary"
+          onClick={submit}
+          disabled={busy || picked.size === 0 || !round.trim()}
+        >
+          {busy ? "Assigning…" : "Assign"}
+        </Button>
       </div>
     </div>
   );

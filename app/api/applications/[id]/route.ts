@@ -26,6 +26,19 @@ interface ReqRow {
   role_family: string;
 }
 
+interface AssignmentRow {
+  id: string;
+  interviewer_id: string;
+  round_label: string;
+  created_at: string;
+}
+
+interface InterviewerRow {
+  id: string;
+  name: string;
+  email: string;
+}
+
 /**
  * GET /api/applications/:id — full detail for the HR side panel.
  * TRD §7: "side panel payload (score + signed resume URL)".
@@ -68,6 +81,30 @@ export async function GET(
     .from("resumes")
     .createSignedUrl(app.resume_storage_path, 600);
 
+  // Assignments with denormalised interviewer for the side panel (issue #7).
+  const { data: assignmentRows } = await supabase
+    .from("interview_assignments")
+    .select("id, interviewer_id, round_label, created_at")
+    .eq("application_id", id)
+    .order("created_at", { ascending: true })
+    .returns<AssignmentRow[]>();
+
+  const interviewerIds = (assignmentRows ?? []).map((a) => a.interviewer_id);
+  const { data: interviewerRows } = interviewerIds.length
+    ? await supabase
+        .from("interviewers")
+        .select("id, name, email")
+        .in("id", interviewerIds)
+        .returns<InterviewerRow[]>()
+    : { data: [] as InterviewerRow[] };
+  const interviewersById = new Map((interviewerRows ?? []).map((i) => [i.id, i]));
+  const assignments = (assignmentRows ?? []).map((a) => ({
+    id: a.id,
+    round_label: a.round_label,
+    created_at: a.created_at,
+    interviewer: interviewersById.get(a.interviewer_id) ?? null,
+  }));
+
   return NextResponse.json({
     id: app.id,
     candidate_name: app.candidate_name,
@@ -79,5 +116,6 @@ export async function GET(
     resume_error: signErr?.message ?? null,
     score: score ?? null,
     req: req ?? null,
+    assignments,
   });
 }
