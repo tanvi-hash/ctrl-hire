@@ -1,14 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import { randomUUID } from "node:crypto";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { scoreApplication } from "@/lib/scoring";
 
 const MAX_BYTES = 5 * 1024 * 1024; // TRD §10
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+// Gemini PDF scoring can take several seconds; give the route headroom on Vercel.
+export const maxDuration = 30;
+
 /**
  * POST /api/apply/:slug — candidate submits an application.
- * TRD §7, §8 (steps 1–2). Scoring (steps 3–4) hooks in at issue #5.
- * No auth — public endpoint (TRD §6).
+ * TRD §7, §8. No auth — public endpoint (TRD §6).
  */
 export async function POST(
   req: NextRequest,
@@ -86,6 +89,13 @@ export async function POST(
     return NextResponse.json({ error: "Couldn't save your application." }, { status: 500 });
   }
 
-  // Scoring hook-in lands at issue #5; no-op for now.
-  return NextResponse.json({ ok: true, applicationId });
+  // Synchronous scoring (TRD §5, §8). A failure here does NOT fail the
+  // submission — the Application row is saved and HR's list will surface a
+  // "Retry" button (TRD §5, issue #6).
+  const scoring = await scoreApplication(applicationId);
+  if (!scoring.ok) {
+    console.error(`Scoring failed for ${applicationId}: ${scoring.error}`);
+  }
+
+  return NextResponse.json({ ok: true, applicationId, scored: scoring.ok });
 }
