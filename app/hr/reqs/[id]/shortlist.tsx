@@ -111,14 +111,6 @@ export function Shortlist({
   const [retrying, setRetrying] = useState<string | null>(null);
   const router = useRouter();
 
-  const stats = useMemo(() => {
-    const total = applications.length;
-    const scored = applications.filter((a) => a.score).length;
-    const toReview = applications.filter((a) => a.status === "new").length;
-    const shortlisted = applications.filter((a) => a.status === "shortlisted").length;
-    return { total, scored, toReview, shortlisted };
-  }, [applications]);
-
   const statusCounts = useMemo(() => {
     const base: Record<FilterStatus, number> = {
       all: applications.length,
@@ -202,7 +194,7 @@ export function Shortlist({
         ← All reqs
       </Link>
 
-      <RoleHeader req={req} stats={stats} />
+      <RoleHeader req={req} />
 
       <Toolbar
         status={status}
@@ -254,60 +246,34 @@ export function Shortlist({
 
 // ─── Role header ──────────────────────────────────────────────────────────────
 
-function RoleHeader({
-  req,
-  stats,
-}: {
-  req: ReqView;
-  stats: { total: number; scored: number; toReview: number; shortlisted: number };
-}) {
+function RoleHeader({ req }: { req: ReqView }) {
   return (
     <section className="rounded-lg border border-line bg-card p-6 shadow-card-lg">
-      <div className="grid items-start gap-7 md:grid-cols-[1.4fr_1fr]">
-        <div>
-          <div className="flex flex-wrap items-center gap-2">
-            <div className="inline-flex items-center gap-1.5 rounded-full bg-stage-shortlisted-bg px-2.5 py-1 text-[11.5px] font-medium text-stage-shortlisted-fg">
-              <span className="h-1.5 w-1.5 rounded-full bg-stage-shortlisted-dot" />
-              Open · accepting applications
-            </div>
-            <ViewJdButton
-              title={req.title}
-              role_family={req.role_family}
-              slug={req.slug}
-              must_haves={req.must_haves}
-              nice_to_haves={req.nice_to_haves}
-              focus_attributes={req.focus_attributes}
-            />
-          </div>
-          <h1 className="mt-2 font-serif text-[40px] leading-[1.05] font-normal -tracking-[0.01em]">
-            {req.title}
-          </h1>
-          <div className="mt-1 flex flex-wrap items-center gap-2 text-[13.5px] text-ink-soft">
-            <span>{req.role_family}</span>
-            <span>·</span>
-            <code className="rounded-full bg-line-2 px-3 py-0.5 font-mono text-[12px] text-ink-soft">
-              /apply/{req.slug}
-            </code>
-          </div>
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="inline-flex items-center gap-1.5 rounded-full bg-stage-shortlisted-bg px-2.5 py-1 text-[11.5px] font-medium text-stage-shortlisted-fg">
+          <span className="h-1.5 w-1.5 rounded-full bg-stage-shortlisted-dot" />
+          Open · accepting applications
         </div>
-
-        <div className="grid grid-cols-4 gap-2">
-          <Kpi label="Applied" value={stats.total} />
-          <Kpi label="Scored" value={stats.scored} />
-          <Kpi label="To review" value={stats.toReview} />
-          <Kpi label="Shortlist" value={stats.shortlisted} />
-        </div>
+        <ViewJdButton
+          title={req.title}
+          role_family={req.role_family}
+          slug={req.slug}
+          must_haves={req.must_haves}
+          nice_to_haves={req.nice_to_haves}
+          focus_attributes={req.focus_attributes}
+        />
+      </div>
+      <h1 className="mt-2 font-serif text-[40px] leading-[1.05] font-normal -tracking-[0.01em]">
+        {req.title}
+      </h1>
+      <div className="mt-1 flex flex-wrap items-center gap-2 text-[13.5px] text-ink-soft">
+        <span>{req.role_family}</span>
+        <span>·</span>
+        <code className="rounded-full bg-line-2 px-3 py-0.5 font-mono text-[12px] text-ink-soft">
+          /apply/{req.slug}
+        </code>
       </div>
     </section>
-  );
-}
-
-function Kpi({ label, value }: { label: string; value: number }) {
-  return (
-    <div className="rounded-sm border border-transparent bg-line-2 p-3">
-      <div className="text-[11px] font-medium tracking-wide text-muted">{label}</div>
-      <div className="mt-1 text-[24px] font-semibold -tracking-[0.02em] tabular-nums">{value}</div>
-    </div>
   );
 }
 
