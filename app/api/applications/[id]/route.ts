@@ -9,6 +9,7 @@ interface AppRow {
   submitted_at: string;
   resume_storage_path: string;
   req_id: string;
+  source: string | null;
 }
 
 interface ScoreRow {
@@ -56,7 +57,7 @@ export async function GET(
 
   const { data: app, error: appErr } = await supabase
     .from("applications")
-    .select("id, candidate_name, candidate_email, status, submitted_at, resume_storage_path, req_id")
+    .select("id, candidate_name, candidate_email, status, submitted_at, resume_storage_path, req_id, source")
     .eq("id", id)
     .single<AppRow>();
   if (appErr || !app) {
@@ -112,6 +113,7 @@ export async function GET(
     status: app.status,
     submitted_at: app.submitted_at,
     resume_storage_path: app.resume_storage_path,
+    source: app.source,
     resume_signed_url: signed?.signedUrl ?? null,
     resume_error: signErr?.message ?? null,
     score: score ?? null,

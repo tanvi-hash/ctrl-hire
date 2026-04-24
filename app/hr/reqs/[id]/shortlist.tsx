@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { StagePill, type Stage } from "@/components/ui/stage-pill";
+import { SourcePill } from "@/components/ui/source-pill";
 import { NotScored, ScoreBlock } from "@/components/ui/score-block";
 import { RowActions, type ActionKind } from "@/components/ui/row-actions";
 import { Button } from "@/components/ui/button";
@@ -21,6 +22,7 @@ export interface RankedApplication {
   candidate_email: string;
   status: Stage;
   submitted_at: string;
+  source: string | null;
   score: {
     match_score: number;
     strengths: string[];
@@ -48,6 +50,7 @@ interface DetailPayload {
   candidate_email: string;
   status: Stage;
   submitted_at: string;
+  source: string | null;
   resume_signed_url: string | null;
   score: {
     match_score: number;
@@ -347,6 +350,7 @@ function CandidateCard({
           <div className="flex flex-wrap items-center gap-2.5">
             <div className="text-[16px] font-semibold -tracking-[0.01em]">{a.candidate_name}</div>
             <StagePill stage={a.status} />
+            {a.source && <SourcePill source={a.source} />}
           </div>
           <div className="mt-0.5 flex flex-wrap items-center gap-2 text-[12.5px] text-muted">
             <span className="truncate">{a.candidate_email}</span>
@@ -523,7 +527,10 @@ function PanelContent({
   return (
     <div className="flex-1 overflow-y-auto">
       <header className="border-b border-line p-6 pb-4">
-        <StagePill stage={detail.status} />
+        <div className="flex flex-wrap items-center gap-2">
+          <StagePill stage={detail.status} />
+          {detail.source && <SourcePill source={detail.source} />}
+        </div>
         <div className="mt-3 grid grid-cols-[1fr_auto] items-end gap-3.5">
           <div>
             <h2 className="font-serif text-[28px] leading-[1.1] font-normal -tracking-[0.01em]">

@@ -5,6 +5,8 @@ import { scoreApplication } from "@/lib/scoring";
 
 const MAX_BYTES = 5 * 1024 * 1024; // TRD §10
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const SOURCE_MAX_LEN = 64;
+const SOURCE_ALLOWED_RE = /^[a-z0-9._-]+$/i;
 
 // Gemini PDF scoring can take several seconds; give the route headroom on Vercel.
 export const maxDuration = 30;
@@ -29,6 +31,8 @@ export async function POST(
   const name = String(form.get("name") ?? "").trim();
   const email = String(form.get("email") ?? "").trim();
   const resume = form.get("resume");
+  const rawSource = String(form.get("source") ?? "").trim().slice(0, SOURCE_MAX_LEN);
+  const source = rawSource && SOURCE_ALLOWED_RE.test(rawSource) ? rawSource : null;
 
   if (name.length < 2)
     return NextResponse.json({ error: "Name is required." }, { status: 422 });
@@ -77,6 +81,7 @@ export async function POST(
     candidate_email: email,
     resume_storage_path: storagePath,
     status: "new",
+    source,
   });
 
   if (insertErr) {

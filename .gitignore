@@ -18,3 +18,13 @@ next-env.d.ts
 
 # Claude
 .claude/settings.local.json
+
+# Local-only secrets
+.supabase-db-password
+.vercel
+.gcp-project-id
+
+# Local dev artifacts
+.playwright-mcp/
+supabase/.temp/
+*.png

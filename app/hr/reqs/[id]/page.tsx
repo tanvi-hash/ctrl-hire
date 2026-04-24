@@ -18,6 +18,7 @@ interface AppRow {
   candidate_email: string;
   status: "new" | "shortlisted" | "saved" | "rejected";
   submitted_at: string;
+  source: string | null;
 }
 
 interface ScoreRow {
@@ -46,7 +47,7 @@ export default async function HRReqPage({
 
   const { data: apps, error: appsErr } = await supabase
     .from("applications")
-    .select("id, candidate_name, candidate_email, status, submitted_at")
+    .select("id, candidate_name, candidate_email, status, submitted_at, source")
     .eq("req_id", id)
     .returns<AppRow[]>();
 
@@ -69,6 +70,7 @@ export default async function HRReqPage({
         candidate_email: a.candidate_email,
         status: a.status,
         submitted_at: a.submitted_at,
+        source: a.source,
         score: s
           ? {
               match_score: s.match_score,

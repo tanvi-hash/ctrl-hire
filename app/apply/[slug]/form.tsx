@@ -1,7 +1,7 @@
 "use client";
 
 import { FormEvent, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { FieldHint, Input, Label } from "@/components/ui/input";
 
@@ -9,6 +9,8 @@ const MAX_BYTES = 5 * 1024 * 1024; // TRD §10
 
 export function ApplyForm({ slug }: { slug: string }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const source = searchParams.get("source") ?? "";
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -42,6 +44,8 @@ export function ApplyForm({ slug }: { slug: string }) {
       className="mt-4 space-y-6 rounded-lg border border-line bg-card p-6 shadow-card-lg"
       noValidate
     >
+      <input type="hidden" name="source" value={source} />
+
       <div>
         <Label htmlFor="name">Full name</Label>
         <Input id="name" name="name" required placeholder="Priya Ramaswamy" autoComplete="name" />
