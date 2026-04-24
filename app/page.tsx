@@ -13,12 +13,18 @@ export default function Home() {
           Internal ATS — the screen-to-interview core of hiring. Pick a view:
         </p>
 
-        <div className="mt-6 grid gap-3 sm:grid-cols-2">
+        <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           <RoleCard
             href="/hr"
             kicker="Internal"
             title="HR"
-            blurb="Create reqs · review shortlists · assign interviewers."
+            blurb="Review reqs · confirm shortlists · assign interviewers."
+          />
+          <RoleCard
+            href="/hm"
+            kicker="Internal · v1.1"
+            title="Hiring Manager"
+            blurb="Draft a JD from a template · send it to HR for review."
           />
           <RoleCard
             href="/interviewer"

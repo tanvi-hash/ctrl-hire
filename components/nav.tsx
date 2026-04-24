@@ -34,11 +34,11 @@ export function Nav() {
 function computePath(pathname: string): string | null {
   if (pathname === "/" || pathname === "") return null;
   if (pathname === "/hr") return "Reqs";
-  if (pathname === "/hr/reqs/new") return (
-    // Rendered as a plain string with middle-dot to match nav typographic density.
-    "Reqs / New"
-  );
+  if (pathname === "/hr/reqs/new") return "Reqs / New";
   if (pathname.startsWith("/hr/reqs/")) return "Reqs / " + pathname.split("/")[3];
+  if (pathname === "/hm") return "Hiring Manager";
+  if (pathname.startsWith("/hm/jd/new")) return "Hiring Manager / New JD";
+  if (pathname.startsWith("/hm")) return "Hiring Manager";
   if (pathname.startsWith("/interviewer")) return "Interviewer";
   if (pathname.startsWith("/apply/")) return "Apply";
   return null;
