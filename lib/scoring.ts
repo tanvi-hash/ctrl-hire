@@ -85,6 +85,7 @@ export async function scoreApplication(applicationId: string): Promise<ScoringRe
         strengths: score.strengths,
         gaps: score.gaps,
         summary: score.summary,
+        profile: score.profile ?? {},
         scored_at: new Date().toISOString(),
       },
       { onConflict: "application_id" },

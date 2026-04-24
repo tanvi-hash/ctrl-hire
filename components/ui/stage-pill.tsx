@@ -1,19 +1,14 @@
+import { PipelineStage, STAGE_LABEL } from "@/lib/stage";
+
 /**
  * Outlined pipeline-stage pill — design.md §5.8.
- * 4 variants used in MVP (TRD §4 status enum: new / shortlisted / saved / rejected).
+ * 5 variants now that we derive `interviewing` from assignments + scorecards.
  */
 
-export type Stage = "new" | "shortlisted" | "saved" | "rejected";
+export type Stage = PipelineStage;
 
-const LABEL: Record<Stage, string> = {
-  new: "New",
-  shortlisted: "Shortlisted",
-  saved: "Saved",
-  rejected: "Rejected",
-};
-
-const STYLES: Record<Stage, { text: string; border: string; dot: string }> = {
-  new: {
+const STYLES: Record<PipelineStage, { text: string; border: string; dot: string }> = {
+  applied: {
     text: "text-stage-new-fg",
     border: "border-stage-new-border",
     dot: "bg-stage-new-dot",
@@ -22,6 +17,13 @@ const STYLES: Record<Stage, { text: string; border: string; dot: string }> = {
     text: "text-stage-shortlisted-fg",
     border: "border-stage-shortlisted-border",
     dot: "bg-stage-shortlisted-dot",
+  },
+  interviewing: {
+    // `screening` palette was defined in design.md §3.1 even though it's unused
+    // for the DB status enum — co-opted here for the derived interviewing stage.
+    text: "text-stage-screening-fg",
+    border: "border-stage-screening-border",
+    dot: "bg-stage-screening-dot",
   },
   saved: {
     text: "text-stage-saved-fg",
@@ -42,9 +44,7 @@ export function StagePill({ stage }: { stage: Stage }) {
       className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border bg-card pl-1.5 pr-2 py-0.5 text-[11.5px] font-medium ${s.text} ${s.border}`}
     >
       <span className={`h-1.5 w-1.5 rounded-full ${s.dot}`} />
-      {LABEL[stage]}
+      {STAGE_LABEL[stage]}
     </span>
   );
 }
-
-export const STAGE_LABELS = LABEL;

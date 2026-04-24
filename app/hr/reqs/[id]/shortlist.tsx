@@ -3,24 +3,42 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { StagePill, type Stage } from "@/components/ui/stage-pill";
+import { StagePill } from "@/components/ui/stage-pill";
 import { SourcePill } from "@/components/ui/source-pill";
 import { NotScored, ScoreBlock } from "@/components/ui/score-block";
 import { RowActions, type ActionKind } from "@/components/ui/row-actions";
 import { Button } from "@/components/ui/button";
+import { AddCandidateButton } from "@/components/ui/add-candidate-button";
+import { ViewJdButton } from "@/components/ui/view-jd-dialog";
+import { ViewToggle } from "@/components/ui/view-toggle";
+import { type DbStatus, type PipelineStage } from "@/lib/stage";
+
+// ─── Types ────────────────────────────────────────────────────────────────────
 
 export interface ReqView {
   id: string;
   slug: string;
   title: string;
   role_family: string;
+  must_haves: string[];
+  nice_to_haves: string[];
+  focus_attributes: string[];
+}
+
+export interface Profile {
+  current_company?: string | null;
+  current_title?: string | null;
+  location?: string | null;
+  years_of_experience?: number | null;
+  phone?: string | null;
 }
 
 export interface RankedApplication {
   id: string;
   candidate_name: string;
   candidate_email: string;
-  status: Stage;
+  status: DbStatus;
+  stage: PipelineStage;
   submitted_at: string;
   source: string | null;
   score: {
@@ -28,6 +46,7 @@ export interface RankedApplication {
     strengths: string[];
     gaps: string[];
     summary: string;
+    profile: Profile;
   } | null;
 }
 
@@ -48,7 +67,7 @@ interface DetailPayload {
   id: string;
   candidate_name: string;
   candidate_email: string;
-  status: Stage;
+  status: DbStatus;
   submitted_at: string;
   source: string | null;
   resume_signed_url: string | null;
@@ -59,19 +78,22 @@ interface DetailPayload {
     strengths: string[];
     gaps: string[];
     summary: string;
+    profile: Profile;
   } | null;
   assignments: Assignment[];
 }
 
-type FilterStage = "all" | Stage;
+type FilterStatus = "all" | DbStatus;
 
-const STAGE_TABS: Array<{ id: FilterStage; label: string }> = [
+const STATUS_TABS: Array<{ id: FilterStatus; label: string }> = [
   { id: "all", label: "All" },
   { id: "new", label: "New" },
   { id: "shortlisted", label: "Shortlisted" },
   { id: "saved", label: "Saved" },
   { id: "rejected", label: "Rejected" },
 ];
+
+// ─── Main ────────────────────────────────────────────────────────────────────
 
 export function Shortlist({
   req,
@@ -82,8 +104,9 @@ export function Shortlist({
   applications: RankedApplication[];
   loadError: string | null;
 }) {
-  const [stage, setStage] = useState<FilterStage>("all");
+  const [status, setStatus] = useState<FilterStatus>("all");
   const [query, setQuery] = useState("");
+  const [view, setView] = useState<"card" | "list">("card");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [retrying, setRetrying] = useState<string | null>(null);
   const router = useRouter();
@@ -96,8 +119,14 @@ export function Shortlist({
     return { total, scored, toReview, shortlisted };
   }, [applications]);
 
-  const stageCounts = useMemo(() => {
-    const base: Record<FilterStage, number> = { all: applications.length, new: 0, shortlisted: 0, saved: 0, rejected: 0 };
+  const statusCounts = useMemo(() => {
+    const base: Record<FilterStatus, number> = {
+      all: applications.length,
+      new: 0,
+      shortlisted: 0,
+      saved: 0,
+      rejected: 0,
+    };
     for (const a of applications) base[a.status]++;
     return base;
   }, [applications]);
@@ -105,13 +134,21 @@ export function Shortlist({
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     return applications.filter((a) => {
-      if (stage !== "all" && a.status !== stage) return false;
+      if (status !== "all" && a.status !== status) return false;
       if (!q) return true;
-      return (a.candidate_name + " " + a.candidate_email + " " + (a.score?.summary ?? ""))
-        .toLowerCase()
-        .includes(q);
+      const hay =
+        a.candidate_name +
+        " " +
+        a.candidate_email +
+        " " +
+        (a.score?.summary ?? "") +
+        " " +
+        (a.score?.profile.current_company ?? "") +
+        " " +
+        (a.score?.profile.location ?? "");
+      return hay.toLowerCase().includes(q);
     });
-  }, [applications, stage, query]);
+  }, [applications, status, query]);
 
   const retry = useCallback(
     async (id: string) => {
@@ -148,6 +185,14 @@ export function Shortlist({
     [router],
   );
 
+  const addCandidate = useCallback(() => {
+    // Candidate intake is self-serve via the apply URL. The button copies it
+    // to the clipboard so HR can share it externally.
+    const url = `${window.location.origin}/apply/${req.slug}`;
+    navigator.clipboard?.writeText(url).catch(() => {});
+    alert(`Candidate URL copied:\n${url}`);
+  }, [req.slug]);
+
   return (
     <div>
       <Link
@@ -160,30 +205,36 @@ export function Shortlist({
       <RoleHeader req={req} stats={stats} />
 
       <Toolbar
-        stage={stage}
-        setStage={setStage}
-        stageCounts={stageCounts}
+        status={status}
+        setStatus={setStatus}
+        statusCounts={statusCounts}
         query={query}
         setQuery={setQuery}
+        view={view}
+        setView={setView}
+        onAdd={addCandidate}
       />
 
       {loadError ? (
         <ErrorCard message={loadError} />
       ) : filtered.length === 0 ? (
         <EmptyState all={applications.length === 0} />
+      ) : view === "card" ? (
+        <CardList
+          items={filtered}
+          retryingId={retrying}
+          onOpen={(id) => setSelectedId(id)}
+          onRetry={retry}
+          onAction={act}
+        />
       ) : (
-        <ul className="mt-3 space-y-2.5">
-          {filtered.map((a) => (
-            <CandidateCard
-              key={a.id}
-              a={a}
-              retryingId={retrying}
-              onOpen={() => setSelectedId(a.id)}
-              onRetry={() => retry(a.id)}
-              onAction={(kind) => act(a.id, kind)}
-            />
-          ))}
-        </ul>
+        <ListTable
+          items={filtered}
+          retryingId={retrying}
+          onOpen={(id) => setSelectedId(id)}
+          onRetry={retry}
+          onAction={act}
+        />
       )}
 
       <SidePanel
@@ -214,9 +265,19 @@ function RoleHeader({
     <section className="rounded-lg border border-line bg-card p-6 shadow-card-lg">
       <div className="grid items-start gap-7 md:grid-cols-[1.4fr_1fr]">
         <div>
-          <div className="inline-flex items-center gap-1.5 rounded-full bg-stage-shortlisted-bg px-2.5 py-1 text-[11.5px] font-medium text-stage-shortlisted-fg">
-            <span className="h-1.5 w-1.5 rounded-full bg-stage-shortlisted-dot" />
-            Open · accepting applications
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="inline-flex items-center gap-1.5 rounded-full bg-stage-shortlisted-bg px-2.5 py-1 text-[11.5px] font-medium text-stage-shortlisted-fg">
+              <span className="h-1.5 w-1.5 rounded-full bg-stage-shortlisted-dot" />
+              Open · accepting applications
+            </div>
+            <ViewJdButton
+              title={req.title}
+              role_family={req.role_family}
+              slug={req.slug}
+              must_haves={req.must_haves}
+              nice_to_haves={req.nice_to_haves}
+              focus_attributes={req.focus_attributes}
+            />
           </div>
           <h1 className="mt-2 font-serif text-[40px] leading-[1.05] font-normal -tracking-[0.01em]">
             {req.title}
@@ -233,7 +294,7 @@ function RoleHeader({
         <div className="grid grid-cols-4 gap-2">
           <Kpi label="Applied" value={stats.total} />
           <Kpi label="Scored" value={stats.scored} />
-          <Kpi label="To review" value={stats.toReview} focus />
+          <Kpi label="To review" value={stats.toReview} />
           <Kpi label="Shortlist" value={stats.shortlisted} />
         </div>
       </div>
@@ -241,13 +302,9 @@ function RoleHeader({
   );
 }
 
-function Kpi({ label, value, focus }: { label: string; value: number; focus?: boolean }) {
+function Kpi({ label, value }: { label: string; value: number }) {
   return (
-    <div
-      className={`rounded-sm border p-3 ${
-        focus ? "border-ink bg-card shadow-kpi-focus" : "border-transparent bg-line-2"
-      }`}
-    >
+    <div className="rounded-sm border border-transparent bg-line-2 p-3">
       <div className="text-[11px] font-medium tracking-wide text-muted">{label}</div>
       <div className="mt-1 text-[24px] font-semibold -tracking-[0.02em] tabular-nums">{value}</div>
     </div>
@@ -257,67 +314,106 @@ function Kpi({ label, value, focus }: { label: string; value: number; focus?: bo
 // ─── Toolbar ─────────────────────────────────────────────────────────────────
 
 function Toolbar({
-  stage,
-  setStage,
-  stageCounts,
+  status,
+  setStatus,
+  statusCounts,
   query,
   setQuery,
+  view,
+  setView,
+  onAdd,
 }: {
-  stage: FilterStage;
-  setStage: (s: FilterStage) => void;
-  stageCounts: Record<FilterStage, number>;
+  status: FilterStatus;
+  setStatus: (s: FilterStatus) => void;
+  statusCounts: Record<FilterStatus, number>;
   query: string;
   setQuery: (q: string) => void;
+  view: "card" | "list";
+  setView: (v: "card" | "list") => void;
+  onAdd: () => void;
 }) {
   return (
     <div className="mt-4 flex flex-wrap items-center gap-3">
       <div className="flex items-center gap-1 rounded-full border border-line bg-[var(--color-glass-60)] p-1 shadow-stages">
-        {STAGE_TABS.map((t) => (
+        {STATUS_TABS.map((t) => (
           <button
             key={t.id}
             type="button"
-            onClick={() => setStage(t.id)}
+            onClick={() => setStatus(t.id)}
             className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[12.5px] font-medium transition-colors ${
-              stage === t.id ? "bg-ink text-white" : "text-ink-soft hover:bg-line-2"
+              status === t.id ? "bg-ink text-white" : "text-ink-soft hover:bg-line-2"
             }`}
           >
-            {t.id !== "all" && stage !== t.id && (
+            {t.id !== "all" && status !== t.id && (
               <span
                 className={`h-1.5 w-1.5 rounded-full ${
                   t.id === "new"
                     ? "bg-stage-new-dot"
                     : t.id === "shortlisted"
-                    ? "bg-stage-shortlisted-dot"
-                    : t.id === "saved"
-                    ? "bg-stage-saved-dot"
-                    : "bg-stage-rejected-dot"
+                      ? "bg-stage-shortlisted-dot"
+                      : t.id === "saved"
+                        ? "bg-stage-saved-dot"
+                        : "bg-stage-rejected-dot"
                 }`}
               />
             )}
             {t.label}
-            <span className={`text-[11px] tabular-nums ${stage === t.id ? "text-faint" : "text-muted"}`}>
-              {stageCounts[t.id]}
+            <span className={`text-[11px] tabular-nums ${status === t.id ? "text-faint" : "text-muted"}`}>
+              {statusCounts[t.id]}
             </span>
           </button>
         ))}
       </div>
 
-      <div className="ml-auto flex items-center gap-2 rounded-full border border-line bg-card px-3.5 py-2 w-[var(--container-search)]">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} className="text-muted">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 1 1-14 0 7 7 0 0 1 14 0z" />
-        </svg>
-        <input
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search name, email, summary…"
-          className="w-full bg-transparent text-[13px] text-ink outline-none placeholder:text-muted"
-        />
+      <div className="ml-auto flex items-center gap-2">
+        <div className="flex items-center gap-2 rounded-full border border-line bg-card px-3.5 py-2 w-[var(--container-search)]">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} className="text-muted">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 1 1-14 0 7 7 0 0 1 14 0z" />
+          </svg>
+          <input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search name, email, company, location…"
+            className="w-full bg-transparent text-[13px] text-ink outline-none placeholder:text-muted"
+          />
+        </div>
+        <ViewToggle view={view} onChange={setView} />
+        <AddCandidateButton onClick={onAdd} />
       </div>
     </div>
   );
 }
 
-// ─── Candidate card ──────────────────────────────────────────────────────────
+// ─── Card view ────────────────────────────────────────────────────────────────
+
+function CardList({
+  items,
+  retryingId,
+  onOpen,
+  onRetry,
+  onAction,
+}: {
+  items: RankedApplication[];
+  retryingId: string | null;
+  onOpen: (id: string) => void;
+  onRetry: (id: string) => void;
+  onAction: (id: string, kind: ActionKind) => void;
+}) {
+  return (
+    <ul className="mt-3 space-y-2">
+      {items.map((a) => (
+        <CandidateCard
+          key={a.id}
+          a={a}
+          retryingId={retryingId}
+          onOpen={() => onOpen(a.id)}
+          onRetry={() => onRetry(a.id)}
+          onAction={(k) => onAction(a.id, k)}
+        />
+      ))}
+    </ul>
+  );
+}
 
 function CandidateCard({
   a,
@@ -332,61 +428,72 @@ function CandidateCard({
   onRetry: () => void;
   onAction: (kind: ActionKind) => void;
 }) {
+  const p = a.score?.profile ?? {};
+  const firstStrength = a.score?.strengths[0];
+  const firstGap = a.score?.gaps[0];
+
   return (
     <li
       onClick={onOpen}
       className="cursor-pointer rounded-md border border-line bg-card p-4 shadow-card transition-[border-color,transform] hover:-translate-y-px hover:border-[var(--color-line-hover)]"
     >
-      <div className="grid grid-cols-[56px_minmax(0,1fr)_auto] items-start gap-3.5">
+      <div className="grid grid-cols-[72px_minmax(0,1fr)_auto] items-start gap-4">
         <div className="pt-0.5">
           {a.score ? (
-            <ScoreBlock score={a.score.match_score} />
+            <ScoreBlock score={a.score.match_score} size="md" />
           ) : (
             <NotScored onRetry={onRetry} busy={retryingId === a.id} />
           )}
         </div>
 
         <div className="min-w-0">
-          <div className="flex flex-wrap items-center gap-2.5">
+          <div className="flex flex-wrap items-center gap-2">
             <div className="text-[16px] font-semibold -tracking-[0.01em]">{a.candidate_name}</div>
-            <StagePill stage={a.status} />
+            <StagePill stage={a.stage} />
             {a.source && <SourcePill source={a.source} />}
           </div>
-          <div className="mt-0.5 flex flex-wrap items-center gap-2 text-[12.5px] text-muted">
-            <span className="truncate">{a.candidate_email}</span>
-            <span>·</span>
-            <span>Applied {formatRel(a.submitted_at)}</span>
-          </div>
 
-          {a.score ? (
-            <>
-              <p className="mt-2.5 max-w-[var(--container-cc-main)] text-[13.5px] leading-[1.5] text-ink-soft">
-                {a.score.summary}
-              </p>
-              {(a.score.strengths.length > 0 || a.score.gaps.length > 0) && (
-                <div className="mt-2.5 flex flex-wrap gap-x-5 gap-y-1 border-t border-dashed border-line pt-2.5">
-                  {a.score.strengths.slice(0, 3).map((s, i) => (
-                    <span key={`s${i}`} className="text-[12px] text-stage-shortlisted-fg">
-                      + {s}
-                    </span>
-                  ))}
-                  {a.score.gaps.slice(0, 3).map((g, i) => (
-                    <span key={`g${i}`} className="text-[12px] text-stage-rejected-fg">
-                      − {g}
-                    </span>
-                  ))}
-                </div>
-              )}
-            </>
-          ) : (
-            <p className="mt-2 text-[12.5px] text-muted">
-              Waiting on Gemini — click <b className="text-ink-soft">Retry</b> to score now.
+          <CompactMeta
+            email={a.candidate_email}
+            phone={p.phone}
+            company={p.current_company}
+            title={p.current_title}
+            location={p.location}
+            yoe={p.years_of_experience}
+            appliedAt={a.submitted_at}
+          />
+
+          {a.score?.summary && (
+            <p className="mt-2.5 max-w-[var(--container-cc-main)] truncate text-[13.5px] leading-[1.45] text-ink-soft">
+              {a.score.summary}
             </p>
+          )}
+
+          {(firstStrength || firstGap) && (
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {firstStrength && (
+                <span className="inline-flex items-center gap-1 rounded-md bg-stage-shortlisted-bg px-2 py-0.5 text-[11.5px] text-stage-shortlisted-fg">
+                  <span className="font-semibold">+</span>
+                  <span className="truncate max-w-[28ch]">{firstStrength}</span>
+                  {a.score!.strengths.length > 1 && (
+                    <span className="text-muted">· +{a.score!.strengths.length - 1} more</span>
+                  )}
+                </span>
+              )}
+              {firstGap && (
+                <span className="inline-flex items-center gap-1 rounded-md bg-stage-rejected-bg px-2 py-0.5 text-[11.5px] text-stage-rejected-fg">
+                  <span className="font-semibold">−</span>
+                  <span className="truncate max-w-[28ch]">{firstGap}</span>
+                  {a.score!.gaps.length > 1 && (
+                    <span className="text-muted">· +{a.score!.gaps.length - 1} more</span>
+                  )}
+                </span>
+              )}
+            </div>
           )}
         </div>
 
-        <div className="flex shrink-0 flex-col items-end gap-2">
-          <div className="text-[11.5px] text-muted">{formatRel(a.submitted_at)}</div>
+        <div className="flex shrink-0 items-center">
           <RowActions onAction={onAction} />
         </div>
       </div>
@@ -394,7 +501,140 @@ function CandidateCard({
   );
 }
 
-// ─── Side panel ──────────────────────────────────────────────────────────────
+function CompactMeta({
+  email,
+  phone,
+  company,
+  title,
+  location,
+  yoe,
+  appliedAt,
+}: {
+  email: string;
+  phone?: string | null;
+  company?: string | null;
+  title?: string | null;
+  location?: string | null;
+  yoe?: number | null;
+  appliedAt: string;
+}) {
+  const current = [title, company].filter(Boolean).join(" at ");
+  const parts: Array<string | null | undefined> = [
+    current || null,
+    location || null,
+    yoe != null ? `${yoe} yrs` : null,
+    `Applied ${formatRel(appliedAt)}`,
+  ];
+  const chips = parts.filter((x): x is string => Boolean(x));
+
+  return (
+    <div className="mt-1 text-[12.5px] text-muted">
+      <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
+        {chips.map((c, i) => (
+          <span key={i} className={i === 0 ? "text-ink-soft" : ""}>
+            {c}
+            {i < chips.length - 1 && <span className="ml-2 text-faint">·</span>}
+          </span>
+        ))}
+      </div>
+      <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[12px]">
+        <span className="text-ink-soft">{email}</span>
+        {phone && (
+          <>
+            <span className="text-faint">·</span>
+            <span>{phone}</span>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── List view (true table) ──────────────────────────────────────────────────
+
+function ListTable({
+  items,
+  retryingId,
+  onOpen,
+  onRetry,
+  onAction,
+}: {
+  items: RankedApplication[];
+  retryingId: string | null;
+  onOpen: (id: string) => void;
+  onRetry: (id: string) => void;
+  onAction: (id: string, kind: ActionKind) => void;
+}) {
+  return (
+    <div className="mt-3 overflow-x-auto rounded-md border border-line bg-card shadow-table">
+      <table className="w-full min-w-[1180px] text-[13px]">
+        <thead className="bg-line-2 text-[10.5px] uppercase tracking-[0.1em] text-muted">
+          <tr className="[&>th]:border-b [&>th]:border-line [&>th]:px-3 [&>th]:py-2.5 [&>th]:text-left [&>th]:font-semibold">
+            <th className="w-[96px]">Score</th>
+            <th className="min-w-[180px]">Candidate</th>
+            <th className="min-w-[170px]">Current</th>
+            <th className="min-w-[120px]">Location</th>
+            <th className="w-[60px] text-center">YOE</th>
+            <th className="min-w-[160px]">Contact</th>
+            <th className="w-[120px]">Source</th>
+            <th className="w-[130px]">Stage</th>
+            <th className="w-[116px] text-right">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {items.map((a) => {
+            const p = a.score?.profile ?? {};
+            return (
+              <tr
+                key={a.id}
+                onClick={() => onOpen(a.id)}
+                className="cursor-pointer transition-colors [&>td]:border-b [&>td]:border-line-3 [&>td]:px-3 [&>td]:py-3 hover:bg-hover"
+              >
+                <td>
+                  {a.score ? (
+                    <ScoreBlock score={a.score.match_score} size="sm" />
+                  ) : (
+                    <NotScored onRetry={() => onRetry(a.id)} busy={retryingId === a.id} />
+                  )}
+                </td>
+                <td>
+                  <div className="font-semibold -tracking-[0.005em]">{a.candidate_name}</div>
+                  {a.score?.summary && (
+                    <div className="mt-0.5 truncate max-w-[32ch] text-[12px] text-muted">
+                      {a.score.summary}
+                    </div>
+                  )}
+                </td>
+                <td className="text-ink-soft">
+                  {p.current_title && p.current_company
+                    ? <><span className="text-ink">{p.current_title}</span> at {p.current_company}</>
+                    : p.current_title || p.current_company || <span className="text-muted">—</span>}
+                </td>
+                <td>{p.location ?? <span className="text-muted">—</span>}</td>
+                <td className="text-center tabular-nums">
+                  {p.years_of_experience ?? <span className="text-muted">—</span>}
+                </td>
+                <td>
+                  <div className="text-[12.5px] text-ink-soft">{a.candidate_email}</div>
+                  {p.phone && <div className="text-[12px] text-muted">{p.phone}</div>}
+                </td>
+                <td>{a.source ? <SourcePill source={a.source} /> : <span className="text-muted">—</span>}</td>
+                <td><StagePill stage={a.stage} /></td>
+                <td className="text-right">
+                  <div className="flex justify-end" onClick={(e) => e.stopPropagation()}>
+                    <RowActions onAction={(k) => onAction(a.id, k)} size="sm" />
+                  </div>
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+// ─── Side panel ───────────────────────────────────────────────────────────────
 
 function SidePanel({
   selectedId,
@@ -524,11 +764,23 @@ function PanelContent({
   onRetry: () => Promise<void> | void;
   onAssigned: () => void;
 }) {
+  const p = detail.score?.profile ?? {};
+  // Compute the derived stage for the panel too — same rule as in server.
+  const submittedCount = detail.assignments.length; // we don't know per-sc here; assignments alone are a passable proxy for "interviewing" signal in the panel
+  const stage: PipelineStage =
+    detail.status === "shortlisted"
+      ? submittedCount > 0
+        ? "interviewing"
+        : "shortlisted"
+      : detail.status === "new"
+        ? "applied"
+        : detail.status;
+
   return (
     <div className="flex-1 overflow-y-auto">
       <header className="border-b border-line p-6 pb-4">
         <div className="flex flex-wrap items-center gap-2">
-          <StagePill stage={detail.status} />
+          <StagePill stage={stage} />
           {detail.source && <SourcePill source={detail.source} />}
         </div>
         <div className="mt-3 grid grid-cols-[1fr_auto] items-end gap-3.5">
@@ -537,13 +789,16 @@ function PanelContent({
               {detail.candidate_name}
             </h2>
             <div className="mt-1 text-[13px] text-ink-soft">{detail.candidate_email}</div>
+            {p.phone && <div className="text-[13px] text-ink-soft">{p.phone}</div>}
           </div>
           {detail.score ? (
             <ScoreBlock score={detail.score.match_score} size="lg" />
           ) : (
-            <NotScored onRetry={() => onRetry()} />
+            <NotScored onRetry={() => onRetry()} size="lg" />
           )}
         </div>
+
+        <ProfileGrid profile={p} />
       </header>
 
       <div className="grid grid-cols-[1.5fr_1fr_1fr] gap-2 border-b border-line p-6 py-4">
@@ -559,9 +814,7 @@ function PanelContent({
       </div>
 
       <section className="border-b border-line px-6 py-4">
-        <div className="mb-2 text-[10.5px] font-semibold uppercase tracking-[0.1em] text-muted">
-          Resume
-        </div>
+        <div className="mb-2 text-[10.5px] font-semibold uppercase tracking-[0.1em] text-muted">Resume</div>
         {detail.resume_signed_url ? (
           <iframe
             src={detail.resume_signed_url}
@@ -589,11 +842,15 @@ function PanelContent({
               <p className="text-[14px] leading-[1.55] text-ink">{detail.score.summary}</p>
             </Section>
 
-            <Section title={`Must-haves · ${detail.score.must_have_checks.filter((c) => c.met).length}/${detail.score.must_have_checks.length}`}>
+            <Section
+              title={`Must-haves · ${detail.score.must_have_checks.filter((c) => c.met).length}/${detail.score.must_have_checks.length}`}
+            >
               <Checklist items={detail.score.must_have_checks} />
             </Section>
 
-            <Section title={`Nice-to-haves · ${detail.score.nice_to_have_checks.filter((c) => c.met).length}/${detail.score.nice_to_have_checks.length}`}>
+            <Section
+              title={`Nice-to-haves · ${detail.score.nice_to_have_checks.filter((c) => c.met).length}/${detail.score.nice_to_have_checks.length}`}
+            >
               <Checklist items={detail.score.nice_to_have_checks} />
             </Section>
 
@@ -615,6 +872,27 @@ function PanelContent({
   );
 }
 
+function ProfileGrid({ profile }: { profile: Profile }) {
+  const rows = [
+    profile.current_title || profile.current_company
+      ? { label: "Current", value: [profile.current_title, profile.current_company].filter(Boolean).join(" at ") }
+      : null,
+    profile.location ? { label: "Location", value: profile.location } : null,
+    profile.years_of_experience != null ? { label: "Experience", value: `${profile.years_of_experience} yrs` } : null,
+  ].filter((x): x is { label: string; value: string } => Boolean(x));
+  if (rows.length === 0) return null;
+  return (
+    <dl className="mt-3 grid grid-cols-3 gap-x-4 gap-y-1 rounded-md bg-line-2 p-3">
+      {rows.map((r, i) => (
+        <div key={i}>
+          <dt className="text-[10.5px] font-semibold uppercase tracking-[0.08em] text-muted">{r.label}</dt>
+          <dd className="mt-0.5 text-[13px] text-ink">{r.value}</dd>
+        </div>
+      ))}
+    </dl>
+  );
+}
+
 // ─── Interviewer assignment section ──────────────────────────────────────────
 
 function AssignmentsSection({
@@ -624,7 +902,7 @@ function AssignmentsSection({
   onAssigned,
 }: {
   applicationId: string;
-  status: Stage;
+  status: DbStatus;
   assignments: Assignment[];
   onAssigned: () => void;
 }) {
@@ -778,15 +1056,9 @@ function AssignForm({
 
       <div className="flex items-center justify-between">
         <div className="text-[11.5px] text-muted">
-          {picked.size === 0
-            ? "Pick one or more interviewers"
-            : `${picked.size} selected`}
+          {picked.size === 0 ? "Pick one or more interviewers" : `${picked.size} selected`}
         </div>
-        <Button
-          variant="primary"
-          onClick={submit}
-          disabled={busy || picked.size === 0 || !round.trim()}
-        >
+        <Button variant="primary" onClick={submit} disabled={busy || picked.size === 0 || !round.trim()}>
           {busy ? "Assigning…" : "Assign"}
         </Button>
       </div>
@@ -797,15 +1069,17 @@ function AssignForm({
 function Section({ title, children }: { title: string; children: React.ReactNode; bad?: boolean }) {
   return (
     <section className="border-b border-line py-3.5 last:border-b-0">
-      <h3 className="mb-2.5 text-[10.5px] font-semibold uppercase tracking-[0.1em] text-muted">
-        {title}
-      </h3>
+      <h3 className="mb-2.5 text-[10.5px] font-semibold uppercase tracking-[0.1em] text-muted">{title}</h3>
       {children}
     </section>
   );
 }
 
-function Checklist({ items }: { items: Array<{ requirement: string; met: boolean; evidence: string }> }) {
+function Checklist({
+  items,
+}: {
+  items: Array<{ requirement: string; met: boolean; evidence: string }>;
+}) {
   if (items.length === 0) return <div className="text-[12.5px] text-muted">(none)</div>;
   return (
     <ul className="flex flex-col gap-1.5">
@@ -849,7 +1123,7 @@ function EviList({ items, bad }: { items: string[]; bad?: boolean }) {
   );
 }
 
-// ─── Shared bits ─────────────────────────────────────────────────────────────
+// ─── Misc ────────────────────────────────────────────────────────────────────
 
 function EmptyState({ all }: { all: boolean }) {
   return (
@@ -903,3 +1177,4 @@ function XIconSm() {
     </svg>
   );
 }
+

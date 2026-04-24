@@ -26,6 +26,14 @@ export interface CheckItem {
   evidence: string;
 }
 
+export interface ScoreProfile {
+  current_company?: string | null;
+  current_title?: string | null;
+  location?: string | null;
+  years_of_experience?: number | null;
+  phone?: string | null;
+}
+
 export interface ScoreJSON {
   match_score: number;
   must_have_checks: CheckItem[];
@@ -33,6 +41,7 @@ export interface ScoreJSON {
   strengths: string[];
   gaps: string[];
   summary: string;
+  profile: ScoreProfile;
 }
 
 const SYSTEM_INSTRUCTION = `You are a careful, evidence-based technical recruiter. Score the attached resume against the rubric provided.
@@ -45,6 +54,12 @@ Return JSON exactly matching the response schema:
 - strengths: exactly 3 short, specific strengths grounded in the resume.
 - gaps: exactly 3 short, specific gaps or concerns.
 - summary: exactly one sentence capturing the candidate's overall profile.
+- profile: optional facts extracted verbatim from the resume when clearly present. OMIT a field if not clearly stated — never guess, never hallucinate.
+  - current_company: the candidate's most recent employer name
+  - current_title: the candidate's most recent job title
+  - location: city / country as written on the resume
+  - years_of_experience: integer — sum of professional FTE years; omit if ambiguous
+  - phone: phone number as written; include any country code
 
 If the resume is ambiguous or evidence is absent, mark requirements as met=false with a clear reason. Do not hallucinate.`;
 
@@ -80,6 +95,16 @@ const RESPONSE_SCHEMA = {
     strengths: { type: "ARRAY", items: { type: "STRING" }, minItems: 3, maxItems: 3 },
     gaps: { type: "ARRAY", items: { type: "STRING" }, minItems: 3, maxItems: 3 },
     summary: { type: "STRING" },
+    profile: {
+      type: "OBJECT",
+      properties: {
+        current_company: { type: "STRING", nullable: true },
+        current_title: { type: "STRING", nullable: true },
+        location: { type: "STRING", nullable: true },
+        years_of_experience: { type: "INTEGER", nullable: true, minimum: 0, maximum: 60 },
+        phone: { type: "STRING", nullable: true },
+      },
+    },
   },
   required: ["match_score", "must_have_checks", "nice_to_have_checks", "strengths", "gaps", "summary"],
 };
@@ -188,7 +213,32 @@ function validateScore(raw: unknown): ScoreJSON {
   if (strengths.length !== 3) throw new Error("strengths must have 3 items.");
   if (gaps.length !== 3) throw new Error("gaps must have 3 items.");
 
-  return { match_score, must_have_checks, nice_to_have_checks, strengths, gaps, summary };
+  const profile = asProfile(r.profile);
+
+  return { match_score, must_have_checks, nice_to_have_checks, strengths, gaps, summary, profile };
+}
+
+function asProfile(v: unknown): ScoreProfile {
+  if (!v || typeof v !== "object" || Array.isArray(v)) return {};
+  const o = v as Record<string, unknown>;
+  const pickStr = (k: string): string | undefined => {
+    const val = o[k];
+    if (typeof val !== "string") return undefined;
+    const t = val.trim();
+    return t.length > 0 ? t : undefined;
+  };
+  const yoeRaw = o.years_of_experience;
+  const years_of_experience =
+    typeof yoeRaw === "number" && Number.isFinite(yoeRaw) && yoeRaw >= 0 && yoeRaw < 70
+      ? Math.round(yoeRaw)
+      : undefined;
+  const out: ScoreProfile = {};
+  const cc = pickStr("current_company"); if (cc) out.current_company = cc;
+  const ct = pickStr("current_title"); if (ct) out.current_title = ct;
+  const loc = pickStr("location"); if (loc) out.location = loc;
+  if (years_of_experience !== undefined) out.years_of_experience = years_of_experience;
+  const ph = pickStr("phone"); if (ph) out.phone = ph;
+  return out;
 }
 
 function asChecks(v: unknown, name: string): CheckItem[] {
